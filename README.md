@@ -2,12 +2,7 @@
 How to create Muon Background files from 2018 Production
 
 # To Do list 
-- change folder names 
-- change input variables 
-- change configuration files (done)
-- skip step 1
-- make step 2 ready for execution 
-- create sub file
+- check whether all arguments for ShipReco.py are enabled
 
 # Questions 
 - in muonback.sub: +JobFlavour    = "workday" -> means it is allowed to run a day
