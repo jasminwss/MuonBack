@@ -1,2 +1,5 @@
-/eos/experiment/ship/user/gfrisell/Simulation_Results/TRY_2025_EM/0_250389_13200001/sim_83621811-e605-4dec-acb1-2154419ea7e4.root
-/eos/experiment/ship/user/gfrisell/Simulation_Results/TRY_2025_EM/0_400000_10000001/sim_8fc61a11-f73e-4303-abe2-52e5f3a2ea65.root
+/eos/experiment/ship/user/gfrisell/Simulation_Results/TRY_2025_EM/0_400000_10400001/sim_7b661362-0713-4154-a5ca-44948fadc46c.root
+/eos/experiment/ship/user/gfrisell/Simulation_Results/TRY_2025_EM/0_400000_10800001/sim_5fe8ccbf-e734-41de-931c-8caad67acd7a.root
+/eos/experiment/ship/user/gfrisell/Simulation_Results/TRY_2025_EM/0_400000_11200001/sim_acd7ba8d-d44c-43d6-878b-5baa27ab4d47.root
+/eos/experiment/ship/user/gfrisell/Simulation_Results/TRY_2025_EM/0_400000_11600001/sim_f1f76247-a704-478d-a617-2a9dae9c0af5.root
+/eos/experiment/ship/user/gfrisell/Simulation_Results/TRY_2025_EM/0_400000_12000001/sim_842e755c-2202-4191-bbba-1fb3a0602f8a.root
