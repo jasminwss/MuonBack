@@ -10,4 +10,4 @@ How to create Muon Background files from 2018 Production
 - create sub file
 
 # Questions 
-- in muonback.sub: +JobFlavour    = "workday", requirements = (OpSysAndVer =?= "AlmaLinux9") && (HasCVMFS =?= True)?
+- in muonback.sub: +JobFlavour    = "workday" -> means it is allowed to run a day

@@ -1,0 +1,2 @@
+/eos/experiment/ship/user/gfrisell/Simulation_Results/TRY_2025_EM/0_250389_13200001/sim_83621811-e605-4dec-acb1-2154419ea7e4.root
+/eos/experiment/ship/user/gfrisell/Simulation_Results/TRY_2025_EM/0_400000_10000001/sim_8fc61a11-f73e-4303-abe2-52e5f3a2ea65.root
