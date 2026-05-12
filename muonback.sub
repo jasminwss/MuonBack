@@ -1,0 +1,16 @@
+executable = submitscript.sh 
+arguments $(SIM_FILE)
+
+output      = logs/job_$(Cluster)_$(Process).out
+error       = logs/job_$(Cluster)_$(Process).err
+log         = logs/job_$(Cluster).log
+
+request_CPUs   = 1
+request_memory = 4 GB
+request_disk   = 5 GB
+
++JobFlavour    = "workday"
+
+requirements = (OpSysAndVer =?= "AlmaLinux9") && (HasCVMFS =?= True)
+
+queue SIM_FILE from input_files.txt
