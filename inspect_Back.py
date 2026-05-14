@@ -1,91 +1,80 @@
-# run withing fairshp 26.04
-
-import rootUtils as ut
+# run within fairship 26.04
+import ROOT, os, sys
 from rootpyPickler import Unpickler
-import ROOT, os,sys
 from argparse import ArgumentParser
-import numpy as np 
-from array import array
-from tabulate import tabulate
-import shipunit as u
-
 
 PDGData = ROOT.TDatabasePDG.Instance()
 parser = ArgumentParser()
-parser.add_argument('--test', dest='testing_code', help='Run Test'   , required=False, action='store_true',default=False)
-parser.add_argument('--path', dest='path' , help='path to the MuonBack files', required=False, action='store', default='/eos/user/j/jaweiss/MuonBack')
-
+parser.add_argument('--test', dest='testing_code', action='store_true', default=False)
+parser.add_argument('--path', dest='path', default='/eos/user/j/jaweiss/MuonBack')
 options = parser.parse_args()
 
-
-if options.testing_code:    directory = './test_hitrates'    
-else: 						directory = './'
-
-
-tag=''
-path=options.path
+path = options.path
 
 def Main_function():
-
-    # global h,Event_weight,SBT_Event_weight,digihitrate,sst_hitrate
-
-    Event_weight,SBT_Event_weight = {}, {}
-    digihitrate = {}
-    total_particlehitrate = 0
-    files = 0
-    global_event_id = -1
-    sbt_pdg_list = {}
-    sst_pdg_list = {}
-    sbt_pdg_index = 0
-    sst_pdg_index = 0
-    sst_hitrate = {}
-
-    # min_maxEloss_array = {}
-    # for threshold in threshold_list:
-    #     min_maxEloss_array[threshold] = np.full((100, 36), np.inf)  # Create a 2D array or dictionary to store minimum eLoss values per (z, phi) bin, initialized with inf
-    
-    # muon_min_eloss_array = np.full((100, 36), np.inf)  # Initialize with infinity
-
     sGeo = None
+    global_event_id = -1
 
-    exception_issues = {}
+    for jobDir in os.listdir(path):
+        # FIX 1: skip anything that isn't a directory (loose files in path would crash os.listdir)
+        if not os.path.isdir(f'{path}/{jobDir}'):
+            continue
 
-
-    # Get only ROOT files
-    root_files = [f for f in os.listdir(path) if f.endswith('.root')]
-
-    for entry in root_files:
+        f, fgeo = None, None
         try:
-            inputFile = os.path.join(path, entry)
-            
-            f = ROOT.TFile.Open(inputFile)
-            if not f or f.IsZombie():
-                print(f"Cannot open file: {entry}")
+            job_files  = os.listdir(f'{path}/{jobDir}')
+            reco_files = [f'{path}/{jobDir}/{fn}' for fn in job_files if fn.startswith('reco_') and fn.endswith('.root')]
+            geo_files  = [f'{path}/{jobDir}/{fn}' for fn in job_files if fn.startswith('geo_')  and fn.endswith('.root')]
+
+            if not reco_files:
+                print(f"No reco file in {jobDir}, skipping.")
                 continue
-            
+            if not geo_files:
+                print(f"No geo file in {jobDir}, skipping.")
+                continue
+
+            inputFile = reco_files[0]
+            geoFile   = geo_files[0]
+
+            f = ROOT.TFile.Open(inputFile)
+            # FIX 2: check file opened successfully before accessing anything
+            if not f or f.IsZombie():
+                print(f"Failed to open reco file: {inputFile}")
+                continue
+
+            # FIX 3: use Get() instead of attribute access — safer, won't segfault on missing tree
             tree = f.Get("ship_reco_sim")
             if not tree:
-                print(f"No tree in {entry}")
+                print(f"No tree 'ship_reco_sim' in {inputFile}")
                 f.Close()
                 continue
-            
-            print(f"\n[File] {entry} ({tree.GetEntries()} events)")
-            
+
+            # FIX 4: use `is None` not `if not sGeo` — ROOT objects don't evaluate cleanly as bool
+            if sGeo is None:
+                fgeo = ROOT.TFile.Open(geoFile)   # FIX 5: use TFile.Open, not TFile()
+                if not fgeo or fgeo.IsZombie():
+                    print(f"Failed to open geo file: {geoFile}")
+                    f.Close()
+                    continue
+                upkl    = Unpickler(fgeo)
+                ShipGeo = upkl.load('ShipGeo')
+                sGeo    = fgeo.FAIRGeom
+
+            print(f"\n[File] {jobDir} ({tree.GetEntries()} events)")
+
             for eventNr, event in enumerate(tree):
                 global_event_id += 1
-                
-                # Only access these - they work without crashes
-                good_tracks = event.Digi_strawtubesHits
+                good_tracks  = event.goodTracks
                 track_mc_map = event.fitTrack2MC
-                
-                print(f"Event {eventNr}: {len(good_tracks)} good tracks, {len(track_mc_map)} MC mappings")
-                
-                if eventNr >= 10:  # limit to 10 events per file
+                print(f"  Event {eventNr}: {len(good_tracks)} good tracks, {len(track_mc_map)} MC mappings")
+                if eventNr >= 10:
                     break
-            
-            f.Close()  # Always close the file
-            
-        except Exception as error:
-            print(f"Error processing {entry}: {error}")
+
+        except Exception as e:
+            print(f"Error processing {jobDir}: {e}")
+        finally:
+            # FIX 6: always close files in finally block
+            if f    and not f.IsZombie():    f.Close()
+            if fgeo and not fgeo.IsZombie(): fgeo.Close()
 
 Main_function()
