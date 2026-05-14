@@ -60,5 +60,8 @@ fi
 
 mkdir -p "$OUTPUT_DIR"
 cp "$REC_FILE" "$OUTPUT_FILE"
+cp "$REC_FILE" "$OUTPUT_FILE" #also paste to reconstruction directory from guglielmo run_Sim.py
+cp "$SIM_FILE" "${OUTPUT_DIR}/sim_${SUBFOLDER}_${UUID}.root"
+cp "$GEO_FILE" "${OUTPUT_DIR}/geo_${SUBFOLDER}_${UUID}.root"
 echo "SUCCESS: $OUTPUT_FILE"
 rm -rf "$TMPDIR"

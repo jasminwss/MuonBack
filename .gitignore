@@ -1,6 +1,9 @@
 
 
 logs/
+logs/*.err/
+logs/*.out/
+logs/*.log/
 *.err/
 *.out/
 *.log/

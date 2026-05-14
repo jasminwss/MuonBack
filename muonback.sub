@@ -1,4 +1,4 @@
-executable = submitscript2.sh 
+executable = submitscript3.sh 
 
 notify_user				= jasminvweiss@gmail.com
 notification 			= Always
@@ -13,7 +13,7 @@ request_CPUs   = 1
 request_memory = 4 GB
 request_disk   = 5 GB
 
-+JobFlavour = "longlunch"
++JobFlavour = "espresso"
 
 on_exit_remove   		= (ExitBySignal == False) && (ExitCode == 0)
 max_retries      		= 3
