@@ -1,0 +1,178 @@
+================================================================================
+COMPREHENSIVE SUMMARY OF MuonBack ROOT FILES
+================================================================================
+
+Total files in /eos/user/j/jaweiss/MuonBack: 5
+Inspecting first 5 files:
+
+
+────────────────────────────────────────────────────────────────────────────────
+FILE: reco_0_250389_13200001_83621811-e605-4dec-acb1-2154419ea7e4.root
+────────────────────────────────────────────────────────────────────────────────
+
+File size: 3.9M
+
+Objects in file (1):
+  - ship_reco_sim                  (TTree)
+
+Tree: ship_reco_sim
+  Total entries: 39444
+  Branches: 16
+
+  Branch List:
+    - ShipEventHeader                FairEventHeader
+    - fitTrack2MC                    vector<int>
+    - FitTracks                      vector<genfit::Track*>
+    - goodTracks                     vector<int>
+    - Tracklets                      vector<Tracklet>
+    - Digi_strawtubesHits            Int_t
+    - digiSBT2MC                     vector<vector<int> >
+    - Digi_SBTHits                   Int_t
+    - VetoHitOnTrack                 Int_t
+    - Digi_TimeDetHits               Int_t
+    - Digi_UpstreamTaggerHits        Int_t
+    - Digi_SplitcalHits              Int_t
+    - Reco_SplitcalClusters          Int_t
+    - Particles                      Int_t
+
+────────────────────────────────────────────────────────────────────────────────
+FILE: reco_0_400000_10000001_8fc61a11-f73e-4303-abe2-52e5f3a2ea65.root
+────────────────────────────────────────────────────────────────────────────────
+
+File size: 6.1M
+
+Objects in file (1):
+  - ship_reco_sim                  (TTree)
+
+Tree: ship_reco_sim
+  Total entries: 62768
+  Branches: 16
+
+  Branch List:
+    - ShipEventHeader                FairEventHeader
+    - fitTrack2MC                    vector<int>
+    - FitTracks                      vector<genfit::Track*>
+    - goodTracks                     vector<int>
+    - Tracklets                      vector<Tracklet>
+    - Digi_strawtubesHits            Int_t
+    - digiSBT2MC                     vector<vector<int> >
+    - Digi_SBTHits                   Int_t
+    - VetoHitOnTrack                 Int_t
+    - Digi_TimeDetHits               Int_t
+    - Digi_UpstreamTaggerHits        Int_t
+    - Digi_SplitcalHits              Int_t
+    - Reco_SplitcalClusters          Int_t
+    - Particles                      Int_t
+
+────────────────────────────────────────────────────────────────────────────────
+FILE: reco_0_400000_10400001_7b661362-0713-4154-a5ca-44948fadc46c.root
+────────────────────────────────────────────────────────────────────────────────
+
+File size: 6.2M
+
+Objects in file (1):
+  - ship_reco_sim                  (TTree)
+
+Tree: ship_reco_sim
+  Total entries: 62775
+  Branches: 16
+
+  Branch List:
+    - ShipEventHeader                FairEventHeader
+    - fitTrack2MC                    vector<int>
+    - FitTracks                      vector<genfit::Track*>
+    - goodTracks                     vector<int>
+    - Tracklets                      vector<Tracklet>
+    - Digi_strawtubesHits            Int_t
+    - digiSBT2MC                     vector<vector<int> >
+    - Digi_SBTHits                   Int_t
+    - VetoHitOnTrack                 Int_t
+    - Digi_TimeDetHits               Int_t
+    - Digi_UpstreamTaggerHits        Int_t
+    - Digi_SplitcalHits              Int_t
+    - Reco_SplitcalClusters          Int_t
+    - Particles                      Int_t
+
+────────────────────────────────────────────────────────────────────────────────
+FILE: reco_0_400000_10800001_5fe8ccbf-e734-41de-931c-8caad67acd7a.root
+────────────────────────────────────────────────────────────────────────────────
+
+File size: 6.2M
+
+Objects in file (1):
+  - ship_reco_sim                  (TTree)
+
+Tree: ship_reco_sim
+  Total entries: 62903
+  Branches: 16
+
+  Branch List:
+    - ShipEventHeader                FairEventHeader
+    - fitTrack2MC                    vector<int>
+    - FitTracks                      vector<genfit::Track*>
+    - goodTracks                     vector<int>
+    - Tracklets                      vector<Tracklet>
+    - Digi_strawtubesHits            Int_t
+    - digiSBT2MC                     vector<vector<int> >
+    - Digi_SBTHits                   Int_t
+    - VetoHitOnTrack                 Int_t
+    - Digi_TimeDetHits               Int_t
+    - Digi_UpstreamTaggerHits        Int_t
+    - Digi_SplitcalHits              Int_t
+    - Reco_SplitcalClusters          Int_t
+    - Particles                      Int_t
+
+────────────────────────────────────────────────────────────────────────────────
+FILE: reco_0_400000_11200001_acd7ba8d-d44c-43d6-878b-5baa27ab4d47.root
+────────────────────────────────────────────────────────────────────────────────
+
+File size: 6.2M
+
+Objects in file (1):
+  - ship_reco_sim                  (TTree)
+
+Tree: ship_reco_sim
+  Total entries: 62612
+  Branches: 16
+
+  Branch List:
+    - ShipEventHeader                FairEventHeader
+    - fitTrack2MC                    vector<int>
+    - FitTracks                      vector<genfit::Track*>
+    - goodTracks                     vector<int>
+    - Tracklets                      vector<Tracklet>
+    - Digi_strawtubesHits            Int_t
+    - digiSBT2MC                     vector<vector<int> >
+    - Digi_SBTHits                   Int_t
+    - VetoHitOnTrack                 Int_t
+    - Digi_TimeDetHits               Int_t
+    - Digi_UpstreamTaggerHits        Int_t
+    - Digi_SplitcalHits              Int_t
+    - Reco_SplitcalClusters          Int_t
+    - Particles                      Int_t
+
+================================================================================
+SUMMARY OF AVAILABLE DATA
+================================================================================
+
+ACCESSIBLE (can be read):
+  - fitTrack2MC:         vector<int>           - track to MC mapping
+  - goodTracks:          vector<int>           - quality track indices
+  - digiSBT2MC:          vector<vector<int>>   - SBT hit to MC mapping
+  - ShipEventHeader:     FairEventHeader       - event header (no dict)
+  - Various detector hit counts (Int_t)
+
+COMPLEX OBJECTS (no ROOT dictionaries - cannot easily access):
+  - FitTracks:           vector<genfit::Track*>      - reconstructed tracks
+  - Particles:           vector<ShipParticle>        - reconstructed particles
+  - Tracklets:           vector<Tracklet>            - track segments
+  - Digi_strawtubesHits, Digi_SBTHits, etc.  - detector hit collections
+
+WHY NO DICTIONARIES:
+  These are FairShip framework classes defined in separate libraries.
+  To access them, you need the library headers/dictionaries loaded at runtime.
+  Use: source config_fairship.sh before running (if available)
+
+ALTERNATIVE:
+  Use hadd or rootbrowse to explore the data with a GUI
+  Or access only the vector<int> branches which don't need dictionaries
