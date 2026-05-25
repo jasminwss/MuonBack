@@ -10,6 +10,7 @@ BASENAME=$(basename "$SIM_FILE" .root)
 UUID=${BASENAME#sim_}
 GEO_FILE=${SUBDIR}/geo_${UUID}.root
 PARAMS_FILE=${SUBDIR}/params_${UUID}.root
+SIM_RUN_OUTPUT=${SUBDIR}/simRunOutput_2.txt
 
 OUTPUT_BASE=/eos/user/j/jaweiss/MuonBack
 SUBFOLDER=$(basename $(dirname "$SIM_FILE"))   # e.g. 16_400000_2000001
@@ -43,6 +44,7 @@ cp "$SIM_FILE"    "${OUTPUT_DIR}/sim_${UUID}.root"
 cp "$GEO_FILE"    "${OUTPUT_DIR}/geo_${UUID}.root"
 cp "$PARAMS_FILE" "${OUTPUT_DIR}/params_${UUID}.root"
 cp "$REC_FILE"    "${OUTPUT_DIR}/reco_${UUID}.root"
+cp "$SIM_RUN_OUTPUT" "${OUTPUT_DIR}/simRunOutput_2.txt"
 
 for logfile in "$SUBDIR"simRunOutput_*.txt "$SUBDIR"simRunCommand_*.txt; do
     [ -f "$logfile" ] && cp "$logfile" "$OUTPUT_DIR/"
