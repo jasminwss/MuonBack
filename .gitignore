@@ -13,3 +13,8 @@ __pycache__/
 *.so
 *.pcm
 *.d
+submitscript.sh/
+submitscript2.sh/
+jaweiss.cc/
+file_inspection_summary.txt/
+problemsolving/
