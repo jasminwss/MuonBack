@@ -1,7 +1,7 @@
-#open problems: OUT OF RANGE Z - seems like 0 is at the target 
+# to review: z=0 is at the Target?
+# to improve: UNNECESSARY matching of reco and sim events, since we only need the sim tree for the vetoPoints
 
 import ROOT, os
-from rootpyPickler import Unpickler
 from argparse import ArgumentParser
 from ShipGeoConfig import load_from_root_file
 import rootUtils as ut
@@ -202,7 +202,7 @@ for jobDir in sorted(os.listdir(options.path)):
         #    print(f"Mismatch at entry {i}: reco eventID={tree.ShipEventHeader.GetMCEntryNumber()}, "
          #         f"sim eventID={tree_sim.MCEventHeader.GetEventID()}")
         
-    for eventNr, event in enumerate(tree):
+    for eventNr, event in enumerate(tree): # UNNECESSARY 
         # sync sim tree to this reco event
         sim_entry = event.ShipEventHeader.GetMCEntryNumber()
         tree_sim.GetEntry(sim_entry)
