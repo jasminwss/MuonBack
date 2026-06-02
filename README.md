@@ -155,20 +155,9 @@ python inspect_Back.py --path /eos/user/j/jaweiss/MuonBack
 
 Requires FairShip environment (run on lxplus after sourcing CVMFS setup).
 
-### Results (2026 production, ~314k generated events)
+### Results (2018 production, propagation with TRY Muon shield)
+to be added
 
-| Threshold | Total SBT hit rate | Max cell rate | Hottest cell |
-|-----------|-------------------|---------------|--------------|
-| 0 MeV | 2.02 MHz | 410 kHz | ID 226022 |
-| 10 MeV | 73.7 kHz | 1.9 kHz | ID 220112 |
-| 20 MeV | 35.0 kHz | 0.95 kHz | ID 220112 |
-| 30 MeV | 18.7 kHz | 810 Hz | ID 624332 |
-| 45 MeV | 11.3 kHz | 790 Hz | ID 624332 |
-| 50 MeV | 9.9 kHz | 780 Hz | ID 624332 |
-| 60 MeV | 9.0 kHz | 780 Hz | ID 624332 |
-| 90 MeV | 6.2 kHz | 770 Hz | ID 524322 |
-
-Scaled to one spill: ~3.2×10⁶ muon background events, of which ~1.2×10⁶ have SBT activity.
 
 ---
 
