@@ -1,6 +1,6 @@
 
- Muon BG Statistics                             Generated: 3.1435e+05	 Scaled to one spill:  3.165e+06
- Muon BG Statistics with SBT activity           Generated: 1.2412e+05	 Scaled to one spill: 1.2346e+06
+ Muon BG Statistics                             Generated: 6.4646e+07	 Scaled to one spill: 1.5863e+09
+ Muon BG Statistics with SBT activity           Generated: 2.3002e+07	 Scaled to one spill: 6.4929e+08
 
   ================================================================================
   SBT
@@ -11,12 +11,12 @@
   THRESHOLD 	 TOTAL DIGIHIT-RATE		MAXIMUM DIGIHIT-RATE IN A CELL
 ------------------------------------------------------------------------------------------------------------------------
 
-     0 MeV	     2.0219 MHz		    4.1e+05 Hz ---> ( Detector ID: 226022)
-    10 MeV	     0.0737 MHz		    1.9e+03 Hz ---> ( Detector ID: 220112)
-    20 MeV	      0.035 MHz		    9.5e+02 Hz ---> ( Detector ID: 220112)
-    30 MeV	     0.0187 MHz		    8.1e+02 Hz ---> ( Detector ID: 624332)
-    45 MeV	     0.0113 MHz		    7.9e+02 Hz ---> ( Detector ID: 624332)
-    50 MeV	     0.0099 MHz		    7.8e+02 Hz ---> ( Detector ID: 624332)
-    60 MeV	      0.009 MHz		    7.8e+02 Hz ---> ( Detector ID: 624332)
-    90 MeV	     0.0062 MHz		    7.7e+02 Hz ---> ( Detector ID: 524322)
+     0 MeV	   972.8037 MHz		    4.4e+07 Hz ---> ( Detector ID: 222522)
+    10 MeV	   129.8828 MHz		    4.1e+07 Hz ---> ( Detector ID: 424901)
+    20 MeV	     51.372 MHz		    1.7e+07 Hz ---> ( Detector ID: 221721)
+    30 MeV	    44.1823 MHz		    1.7e+07 Hz ---> ( Detector ID: 221721)
+    45 MeV	    23.5416 MHz		    1.7e+07 Hz ---> ( Detector ID: 221821)
+    50 MeV	    22.7954 MHz		    1.7e+07 Hz ---> ( Detector ID: 221821)
+    60 MeV	     4.6523 MHz		    4.2e+05 Hz ---> ( Detector ID: 224812)
+    90 MeV	     1.8455 MHz		    1.9e+04 Hz ---> ( Detector ID: 210112)
   --------------------------------------------------------------------------------
