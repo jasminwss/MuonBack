@@ -24,7 +24,7 @@ ut.bookHist(h, 'vetopoint_pdg_vs_energydeposition'		,'SBT (vetoPoint info)					;
 ut.bookHist(h, 'vetopoint_min_energydeposition_muons'			,'SBT (vetoPoint info) min(energy deposition) of muons 	; z(cm) ; #phi ;energy deposition(MeV)'	,100,3000.,8500.,36,0,360) #-3000.,3000.,36,0,360)
 ut.bookHist(h, 'vetopoint_energydeposition'				,'SBT (vetoPoint info)					; Energy deposition per particle hit(GeV); 		'		,1000,0.,1)
 ut.bookHist(h, 'vetopoint_energydeposition_shapewise'	,'SBT (vetoPoint info)					; Shape ID; Energy deposition per particle hit(GeV)	;'	,6,0.5,6.5,1000,0,1)#2D plot
-ut.bookHist(h, 'vetopoint_topology_phi'					,'SBT (vetoPoint info) hitrate ; z(cm) ; #phi 	'			,100,-3000.,3000.,36,0,360)
+ut.bookHist(h, 'vetopoint_topology_phi'					,'SBT (vetoPoint info) hitrate ; z(cm) ; #phi 	'			,100,3000.,8500.,36,0,360)
 ut.bookHist(h, 'vetopoint_spatial_dist'					,'SBT (vetoPoint info) position of particle hit within the SBT cell ; x(cm) ; z(cm)	; y(cm) ',100,-200.,200.,100,-50,50,100,-300.,300.)
 
 threshold_list=[0,10,20,30,45,50,60,90]
@@ -265,8 +265,6 @@ for jobDir in sorted(os.listdir(options.path)):
 
                 z_bin 	= h['vetopoint_min_energydeposition_muons'].GetXaxis().FindBin(vetopoint_z)
                 phi_bin = h['vetopoint_min_energydeposition_muons'].GetYaxis().FindBin(Phicalc(vetopoint_x,vetopoint_y))
-                
-
 
                 # Skip underflow (0) and overflow (nBins+1)
                 if 1 <= z_bin <= 100 and 1 <= phi_bin <= 36:
@@ -275,8 +273,8 @@ for jobDir in sorted(os.listdir(options.path)):
                 #if z_bin == 0 or z_bin == 101:
                     #print(f"Out of range z: {vetopoint_z:.1f}, shape_nr: {shape_nr}, detID: {detID}") OUT OF RANGE Z
                 
-                relative_x, relative_z, relative_y = print_SBTcell_relative_pos(veto_MCPoint)
-                h['vetopoint_spatial_dist'].Fill(relative_x, relative_z, relative_y, weight)
+            relative_x, relative_z, relative_y = print_SBTcell_relative_pos(veto_MCPoint)
+            h['vetopoint_spatial_dist'].Fill(relative_x, relative_z, relative_y, weight)
 
         #Explicit  Digitisation 
         digiSBT = {}
