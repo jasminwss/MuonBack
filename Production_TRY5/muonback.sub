@@ -1,0 +1,27 @@
+executable = submitscript3.sh 
+
+notify_user				= jasminvweiss@gmail.com
+notification 			= Always
+
+arguments = "$(SIM_FILE)"
+
+output      = logs/job_$(Cluster)_$(Process).out
+error       = logs/job_$(Cluster)_$(Process).err
+log         = logs/job_$(Cluster).log
+
+request_CPUs   = 1
+request_memory = 4 GB
+request_disk   = 5 GB
+
++JobFlavour = "espresso"
+
+on_exit_remove   		= (ExitBySignal == False) && (ExitCode == 0)
+max_retries      		= 3
+requirements     		= Machine =!= LastRemoteHost 
+
+# Ensure the job has access to your EOS/CVMFS credentials
+requirements = (OpSysAndVer =?= "AlmaLinux9")
++REQUIRED_OS = "AlmaLinux9"
+#use_x509userproxy = True
+
+queue SIM_FILE from input_files.txt
