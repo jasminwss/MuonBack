@@ -13,7 +13,7 @@ ROOT.gROOT.SetBatch(True)
 PDGData = ROOT.TDatabasePDG.Instance()
 
 parser = ArgumentParser()
-parser.add_argument('--path', dest='path', default='/eos/user/j/jaweiss/MuonBack')
+parser.add_argument('--path', dest='path', default='/eos/user/j/jaweiss/MuonBack/TRY2PlSc')
 options = parser.parse_args()
 
 
@@ -58,8 +58,8 @@ def Phicalc(x, y):
 
 	r = ROOT.TMath.Sqrt(x*x + y*y)
 
-	if r == 0:  
-	    return np.inf #Prevent division by zero
+	if r == 0:
+		return np.inf #Prevent division by zero
 
 	if(y>=0):   phi =   ROOT.TMath.ACos(x/r)
 	else:       phi =-1*ROOT.TMath.ACos(x/r)+2*ROOT.TMath.Pi()
@@ -155,37 +155,36 @@ def print_result(tag):
 		print(       "\n  " + "-"*80 + "\n")
 		readme.write("\n  " + "-"*80 + "\n")
 
-def classify_production_vertex(track):
-    """
-    Classify where a track was produced using ROOT geometry navigation. 
-    Returns 'cavern', 'SBT', or 'upstream.
-    """
-    nav = ROOT.gGeoManager.GetCurrentNavigator()
-    if not nav:
-        print("not nav -> upstream")
-        return 'upstream'
+ORIGIN_MAP = {'muon_cavern': 'cavern', 'muon_SBT': 'SBT', 'EM_debris_upstream': 'upstream'}
 
-    vx, vy, vz = track.GetStartX(), track.GetStartY(), track.GetStartZ()
-    nav.SetCurrentPoint(vx, vy, vz)
-    node = nav.FindNode()
+def get_muon_tracks_hitting_SBT(event):
+    muon_tracks = set()
+    for hit in event.vetoPoint:
+        detID = hit.GetDetectorID()
+        if 1000 < detID < 999999 and abs(hit.PdgCode()) == 13:
+            muon_tracks.add(hit.GetTrackID())
+    return muon_tracks
 
-    if node is None: 
-        return 'upstream'
+def is_event_with_muonhit_in_CAVERN(event):
+    """Any muon track in the event (not just those that hit the SBT) that
+    produces a daughter starting inside the Cavern volume."""
+    for track in event.MCTrack:
+        if track.GetMotherId() == -1: continue
+        if abs(event.MCTrack[track.GetMotherId()].GetPdgCode()) == 13:
+            X, Y, Z = track.GetStartX(), track.GetStartY(), track.GetStartZ()
+            node = ROOT.gGeoManager.FindNode(X, Y, Z)
+            if node and node.GetVolume().GetName().startswith('Cavern'):
+                return True
+    return False
 
-    vol_name = node.GetName()
-
-    if 'Cavern' in vol_name:
-        #print("found cavern")
-        return 'cavern'
-
-    if 'LiSc' in vol_name or 'Rib' in vol_name or 'Wall' in vol_name:
-        #print("found SBT")
-        return 'SBT'
-
-    #print ("found neither cavern nor SBT, but ", vol_name)
-    return 'upstream'
-
-
+def classify_event_origin(event):
+    # Cavern check first and unrestricted, so muons that never leave an SBT
+    # hit but do interact in the Cavern aren't mis-bucketed as EM_debris_upstream.
+    if is_event_with_muonhit_in_CAVERN(event):
+        return 'muon_cavern'
+    if get_muon_tracks_hitting_SBT(event):
+        return 'muon_SBT'
+    return 'EM_debris_upstream'
 
 
 # global variables
@@ -267,6 +266,7 @@ for jobDir in sorted(os.listdir(options.path)):
 
         weight = Event_weight[global_event_id]
 
+        event_origin = ORIGIN_MAP[classify_event_origin(tree_sim)]
 
         for key, veto_MCPoint in enumerate(tree_sim.vetoPoint): # for every particle hitting the SBT in the simulation
 
@@ -280,9 +280,6 @@ for jobDir in sorted(os.listdir(options.path)):
             vetopoint_z,vetopoint_x,vetopoint_y = veto_MCPoint.GetZ(),veto_MCPoint.GetX(),veto_MCPoint.GetY()
             Eloss = veto_MCPoint.GetEnergyLoss()
 
-            hitting_track = tree_sim.MCTrack[veto_MCPoint.GetTrackID()]
-            origin = classify_production_vertex(hitting_track)
-
             if detID not in ElossPerDetId:
                 ElossPerDetId[detID]=0
                 listOfVetoPoints[detID]=[]
@@ -290,7 +287,7 @@ for jobDir in sorted(os.listdir(options.path)):
 
             ElossPerDetId[detID] += Eloss
             listOfVetoPoints[detID].append(key)
-            originElossPerDetId[detID][origin] += Eloss
+            originElossPerDetId[detID][event_origin] += Eloss
 
             try:	particle_name=PDGData.GetParticle(pdgCode).GetName()
             except:	particle_name='others'
@@ -455,7 +452,7 @@ for key in h:
 
 out_file.Close()
 
-tag = '2026'
+tag = 'TRY2LiSc_Test'
 directory = './'
 print_result(tag)
         

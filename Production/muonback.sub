@@ -3,7 +3,7 @@ executable = submitscript3.sh
 notify_user				= jasminvweiss@gmail.com
 notification 			= Always
 
-arguments = "$(SIM_FILE)"
+arguments = "$(inputFile) $(startEvent) $(nEvents) $(Process) $(Cluster)"
 
 output      = logs/job_$(Cluster)_$(Process).out
 error       = logs/job_$(Cluster)_$(Process).err
@@ -13,7 +13,7 @@ request_CPUs   = 1
 request_memory = 4 GB
 request_disk   = 5 GB
 
-+JobFlavour = "espresso"
++JobFlavour = "tomorrow"
 
 on_exit_remove   		= (ExitBySignal == False) && (ExitCode == 0)
 max_retries      		= 3
@@ -24,4 +24,4 @@ requirements = (OpSysAndVer =?= "AlmaLinux9")
 +REQUIRED_OS = "AlmaLinux9"
 #use_x509userproxy = True
 
-queue SIM_FILE from input_files.txt
+queue inputFile,startEvent,nEvents from sim_jobs_short.txt
