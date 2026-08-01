@@ -16,7 +16,7 @@ ClusterId=$5
 
 RUN_ID="${ClusterId}_${ProcId}"
 
-OUTPUT_BASE=/eos/user/j/jaweiss/MuonBack/TRY2LiSc
+OUTPUT_BASE=/eos/user/j/jaweiss/MuonBack/TRY5LiSc
 OUTPUT_DIR=${OUTPUT_BASE}/${ClusterId}/job_${ProcId}   # ← one folder per job
 mkdir -p "$OUTPUT_DIR"
 
@@ -39,7 +39,7 @@ echo "=============================================================="
     -f "$inputFile" \
     -i "$startEvent" \
     -n "$nEvents" \
-    --shieldName TRY_2025 \
+    --shieldName TRY_2026 \
     --tag "$RUN_ID" \
     -o "$TMPDIR" | tee simRunOutput_1.txt
 

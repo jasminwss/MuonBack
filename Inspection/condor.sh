@@ -21,4 +21,4 @@ echo "Using FAIRSHIP=$FAIRSHIP (pixi env)"
 
 #######################################################################################
 
-python /afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/inspect_Back.py --path /eos/user/j/jaweiss/MuonBack/TRY2LiSc/11917294
+"${PIXI_RUN[@]}" python /afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/inspect_Back.py --path /eos/user/j/jaweiss/MuonBack/TRY5LiSc/11921562
