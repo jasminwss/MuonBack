@@ -13,4 +13,4 @@ source /afs/cern.ch/work/j/jaweiss/private/HTCondor_scripts/config_26.04.sh #ali
 echo 'environment set'
 #######################################################################################
 
-python /afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/inspect_Back.py
+python /afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/inspect_Back.py --path /eos/user/j/jaweiss/MuonBack/TRY2PlSc --tag TRY2PlSc

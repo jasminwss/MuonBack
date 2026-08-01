@@ -5,9 +5,9 @@ notify_user				= jasminvweiss@gmail.com
 notification 			= Always
 
 ##############################################################################################################
-output      = logs.out
-error       = logs.err
-log         = logs.log
+output      = logs_TRY2PlSc.out
+error       = logs_TRY2PlSc.err
+log         = logs_TRY2PlSc.log
 ##############################################################################################################
 
 #request_memory 		= 50 GB
