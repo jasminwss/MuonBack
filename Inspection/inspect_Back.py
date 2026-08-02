@@ -14,6 +14,7 @@ PDGData = ROOT.TDatabasePDG.Instance()
 
 parser = ArgumentParser()
 parser.add_argument('--path', dest='path', default='/eos/user/j/jaweiss/MuonBack/TRY2PlSc')
+parser.add_argument('--tag', dest='tag', default='')
 options = parser.parse_args()
 
 
@@ -441,7 +442,7 @@ for z_bin in range(1,101):
             h['vetopoint_min_energydeposition_muons'].SetBinContent(z_bin, phi_bin, min_eloss_veto)	
 
 out_file = ROOT.TFile(
-    "/afs/cern.ch/work/j/jaweiss/private/MuonBack/inspection.root",
+    f"/afs/cern.ch/work/j/jaweiss/private/MuonBack/{tag}.root",
     "RECREATE"
 )
 out_file.cd()
@@ -452,7 +453,7 @@ for key in h:
 
 out_file.Close()
 
-tag = 'TRY5LiSc_Test'
+tag = options.tag if options.tag else "inspection"
 directory = './'
 print_result(tag)
         

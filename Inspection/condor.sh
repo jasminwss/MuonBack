@@ -8,11 +8,6 @@
 
 #######################################################################################
 
-#source /cvmfs/ship.cern.ch/26.07/setUp.sh
-#eval $(alienv --work-dir /cvmfs/ship.cern.ch/26.07/sw load FairShip/latest)
-#echo "Using FAIRSHIP=$FAIRSHIP"
-
-
 FAIRSHIP=/afs/cern.ch/work/j/jaweiss/FairShip
 export QT_QPA_PLATFORM=offscreen   # headless node: Geant4's Qt UI otherwise aborts with qFatal
 PIXI_BIN=/afs/cern.ch/work/j/jaweiss/.pixi/bin/pixi
@@ -21,4 +16,4 @@ echo "Using FAIRSHIP=$FAIRSHIP (pixi env)"
 
 #######################################################################################
 
-"${PIXI_RUN[@]}" python /afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/inspect_Back.py --path /eos/user/j/jaweiss/MuonBack/TRY5LiSc/11921562
+"${PIXI_RUN[@]}" python /afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/inspect_Back.py --path /eos/user/j/jaweiss/MuonBack/TRY5LiSc/11921562 --tag TRY5LiSc_full 
