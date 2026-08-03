@@ -10,7 +10,7 @@ error       = logs.err
 log         = logs.log
 ##############################################################################################################
 
-#request_memory 		= 50 GB
+request_memory 		= 7000
 #request_disk			= 4 GB
 on_exit_remove   		= (ExitBySignal == False) && (ExitCode == 0)
 max_retries      		= 3
