@@ -441,6 +441,8 @@ for z_bin in range(1,101):
         if min_eloss_veto != np.inf:  # Only fill if there's a valid min eLoss
             h['vetopoint_min_energydeposition_muons'].SetBinContent(z_bin, phi_bin, min_eloss_veto)	
 
+tag = options.tag if options.tag else "inspection"
+
 out_file = ROOT.TFile(
     f"/afs/cern.ch/work/j/jaweiss/private/MuonBack/{tag}.root",
     "RECREATE"
@@ -453,7 +455,6 @@ for key in h:
 
 out_file.Close()
 
-tag = options.tag if options.tag else "inspection"
 directory = './'
 print_result(tag)
         
