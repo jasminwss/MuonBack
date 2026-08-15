@@ -4,16 +4,14 @@ import ROOT, os
 from argparse import ArgumentParser
 from ShipGeoConfig import load_from_root_file
 import rootUtils as ut
-from array import array
 import numpy as np
 
 ROOT.gROOT.SetBatch(True)
-#ROOT.gErrorIgnoreLevel = ROOT.kFatal
-PDGData = ROOT.TDatabasePDG.Instance()
 
 parser = ArgumentParser()
 parser.add_argument('--version', dest='version', default= 'TRY5LiSc')
 parser.add_argument('--tag', dest='tag', default='')
+parser.add_argument('--test', dest='test', action='store_true')
 options = parser.parse_args()
 tag = options.tag if options.tag else "phi-z-plots"
 path = '/eos/user/j/jaweiss/MuonBack/TRY5LiSc/11921562/' if options.version == 'TRY5LiSc' else '/eos/user/j/jaweiss/MuonBack/TRY2PlSc/'
@@ -87,10 +85,9 @@ def classify_production_vertex(track):
 
 # global variables
 sGeo = None
-sbt_pdg_index = 0
 Event_weight = {}
 global_event_id = -1 #s.t. it starts at 0
-muon_min_eloss_array = np.full((100, 36), np.inf)  # Initialize with infinity
+muon_min_eloss_array = {o: np.full((100,36), np.inf) for o in origin_list}  # Initialize with infinity
 total_particlehitrate = 0
 SBT_Event_weight = {}
 min_maxEloss_array = {} 
@@ -99,10 +96,14 @@ for threshold in threshold_list:
 ORIGIN_CATEGORIES = ('cavern', 'SBT', 'upstream')
 digihitrate_by_origin = {}   # [threshold][origin][detID] =  hitrate
 
-for jobDir in sorted(os.listdir(options.path)):
+jobdirnmbr = 0
+for jobDir in sorted(os.listdir(path)):
     jobPath = f'{path}/{jobDir}'
     if not os.path.isdir(jobPath):
         continue
+    jobdirnmbr += 1
+    if options.test and jobdirnmbr>10:
+        break
     job_files  = os.listdir(jobPath)
     geo_files  = [f'{jobPath}/{fn}' for fn in job_files
                   if fn.startswith('geo_')  and fn.endswith('.root')]
@@ -133,6 +134,13 @@ for jobDir in sorted(os.listdir(options.path)):
         ElossPerDetId       = {}
         listOfVetoPoints    = {}
         originElossPerDetId = {}  # [detID][origin] = total Eloss from that origin
+        global_event_id += 1
+        for track in tree_sim.MCTrack:
+            if track.GetPdgCode() in (13,-13):
+                Event_weight[global_event_id] = track.GetWeight()
+                break
+
+        weight=Event_weight[global_event_id]
 
         for key, veto_MCPoint in enumerate(tree_sim.vetoPoint): # for every particle hitting the SBT in the simulation
 
@@ -141,7 +149,6 @@ for jobDir in sorted(os.listdir(options.path)):
 
             pdgCode  = tree_sim.MCTrack[veto_MCPoint.GetTrackID()].GetPdgCode()
             detID    = veto_MCPoint.GetDetectorID()
-            shape_nr = detID // 100000
 
             vetopoint_z,vetopoint_x,vetopoint_y = veto_MCPoint.GetZ(),veto_MCPoint.GetX(),veto_MCPoint.GetY()
             Eloss = veto_MCPoint.GetEnergyLoss()
@@ -168,18 +175,19 @@ for jobDir in sorted(os.listdir(options.path)):
 
                 # Skip underflow (0) and overflow (nBins+1)
                 if 1 <= z_bin <= 100 and 1 <= phi_bin <= 36:
-                    if (Eloss/0.001) < muon_min_eloss_array[z_bin-1, phi_bin-1]:
-                        muon_min_eloss_array[z_bin-1, phi_bin-1] = Eloss/0.001
+                    if (Eloss/0.001) < muon_min_eloss_array[origin][z_bin-1, phi_bin-1]:
+                        muon_min_eloss_array[origin][z_bin-1, phi_bin-1] = Eloss/0.001
 
         #Explicit  Digitisation 
         digiSBT = {}
+        detID_to_origin = {}
 
         for index,detID in enumerate(ElossPerDetId):
             aHit = ROOT.vetoHit(detID,ElossPerDetId[detID]) # digitized hit object — combining the cell ID with the total Eloss into a single reconstructed hit
             digiSBT[index] = aHit # storing all digi hits for the event
-
             # dominant origin for this cell = whichever origin deposited the most Eloss
             cell_origin = max(originElossPerDetId[detID], key=lambda o: originElossPerDetId[detID][o])
+            detID_to_origin[detID] = cell_origin
 
             for threshold in threshold_list:
                 if ElossPerDetId[detID]<0.001*threshold:
@@ -196,11 +204,10 @@ for jobDir in sorted(os.listdir(options.path)):
 
         #Reading Digitised Data
 
-        maxeLoss = {threshold: -1 for threshold in threshold_list} #maximum energy deposition percell
+        maxeLoss = {t: {o: -1 for o in origin_list} for t in threshold_list} #maximum energy deposition percell
         
-        nmaxcells={}
-        max_z={}
-        max_phi={}
+        max_z={t: {} for t in threshold_list}
+        max_phi={t: {} for t in threshold_list}
 
         for aHit in digiSBT.values():
 
@@ -210,38 +217,32 @@ for jobDir in sorted(os.listdir(options.path)):
             eLoss  	=aHit.GetEloss()
             detID 	=aHit.GetDetectorID()
             shape_nr=int(ROOT.TMath.Floor(detID/100000))
+            cell_origin = detID_to_origin[detID]
 					
             for threshold in threshold_list:
-                for origin in origin_list:
                     if eLoss<0.001*threshold: continue
 
-                    if eLoss>maxeLoss[threshold]:
-                        nmaxcells[threshold]=0
-                        maxeLoss[threshold]= eLoss
-                        max_z[threshold]   = z
-                        max_phi[threshold] = Phicalc(x,y)
+                    if eLoss>maxeLoss[threshold][cell_origin]:
+                        maxeLoss[threshold][cell_origin] = eLoss
+                        max_z[threshold][cell_origin]   = z
+                        max_phi[threshold][cell_origin] = Phicalc(x,y)
 
-                    #print(ElossPerDetId[detID],maxeLoss)
-                            
-                    if eLoss==maxeLoss[threshold]:
-                        nmaxcells[threshold]+=1
-                    
-                    h[ f'{threshold}_digihit_topology_phi {origin}'].Fill(z,Phicalc(x,y),weight)
-                    h[ f'{threshold}_digihit_z {origin}'].Fill(z,weight)
+                    h[ f'{threshold}_digihit_topology_phi {cell_origin}'].Fill(z,Phicalc(x,y),weight)
+                    h[ f'{threshold}_digihit_z {cell_origin}'].Fill(z,weight)
 
             
 
         for threshold in threshold_list:
             for origin in origin_list:
             
-                if maxeLoss[threshold]==-1: continue
-                h[f'{threshold}_maxenergydeposition {origin}'].Fill(maxeLoss[threshold],weight)
+                if maxeLoss[threshold][origin]==-1: continue
+                h[f'{threshold}_maxenergydeposition {origin}'].Fill(maxeLoss[threshold][origin],weight)
 
-                z_bin 	= h[f'{threshold}_digihit_max_edepval_topology_phi {origin}'].GetXaxis().FindBin(max_z[threshold])
-                phi_bin = h[f'{threshold}_digihit_max_edepval_topology_phi {origin}'].GetYaxis().FindBin(max_phi[threshold])
-                
-                if maxeLoss[threshold]/0.001 < min_maxEloss_array[threshold][z_bin-1, phi_bin-1][origin]:  # -1 to adjust for array index
-                    min_maxEloss_array[threshold][z_bin-1, phi_bin-1][origin] = maxeLoss[threshold]/0.001
+                z_bin 	= h[f'{threshold}_digihit_max_edepval_topology_phi {origin}'].GetXaxis().FindBin(max_z[threshold][origin])
+                phi_bin = h[f'{threshold}_digihit_max_edepval_topology_phi {origin}'].GetYaxis().FindBin(max_phi[threshold][origin])
+
+                if maxeLoss[threshold][origin]/0.001 < min_maxEloss_array[threshold][origin][z_bin-1, phi_bin-1]:  # -1 to adjust for array index
+                    min_maxEloss_array[threshold][origin][z_bin-1, phi_bin-1] = maxeLoss[threshold][origin]/0.001
 
 
 
@@ -249,17 +250,20 @@ for jobDir in sorted(os.listdir(options.path)):
 # Fill the histogram with the minimum eLoss values
 for z_bin in range(1,101):
     for phi_bin in range(1,37):
-        for threshold in threshold_list:
-            for origin in origin_list:
-                min_eloss = min_maxEloss_array[threshold][z_bin-1, phi_bin-1][origin]
+        for origin in origin_list:
+            for threshold in threshold_list:
+                min_eloss = min_maxEloss_array[threshold][origin][z_bin-1, phi_bin-1]
                 if min_eloss != np.inf:  # Only fill if there's a valid min eLoss
                     h[f'{threshold}_digihit_max_edepval_topology_phi {origin}'].SetBinContent(z_bin, phi_bin, min_eloss)
             
-        min_eloss_veto = muon_min_eloss_array[z_bin-1, phi_bin-1]
-        if min_eloss_veto != np.inf:  # Only fill if there's a valid min eLoss
-            h[f'vetopoint_min_energydeposition_muons {origin}'].SetBinContent(z_bin, phi_bin, min_eloss_veto)	
+            min_eloss_veto = muon_min_eloss_array[origin][z_bin-1, phi_bin-1]
+            if min_eloss_veto != np.inf:  # Only fill if there's a valid min eLoss
+                h[f'vetopoint_min_energydeposition_muons {origin}'].SetBinContent(z_bin, phi_bin, min_eloss_veto)	
 
-out_file = ROOT.TFile(f"{path}/z_phi_origin/{tag}.root","RECREATE")
+if options.version == "TRY5LiSc":
+    out_file = ROOT.TFile(f"/eos/user/j/jaweiss/MuonBack/TRY5LiSc/z_phi_origin/{tag}.root","RECREATE")
+else: 
+    out_file = ROOT.TFile(f"/eos/user/j/jaweiss/MuonBack/TRY2PlSc/z_phi_origin/{tag}.root","RECREATE")
 out_file.cd()
 
 for key in h:
