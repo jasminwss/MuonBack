@@ -102,7 +102,7 @@ for jobDir in sorted(os.listdir(path)):
     if not os.path.isdir(jobPath):
         continue
     jobdirnmbr += 1
-    if options.test and jobdirnmbr>10:
+    if options.test and jobdirnmbr>800:
         break
     job_files  = os.listdir(jobPath)
     geo_files  = [f'{jobPath}/{fn}' for fn in job_files
