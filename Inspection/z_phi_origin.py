@@ -12,10 +12,12 @@ parser = ArgumentParser()
 parser.add_argument('--version', dest='version', default= 'TRY5LiSc')
 parser.add_argument('--tag', dest='tag', default='')
 parser.add_argument('--test', dest='test', action='store_true')
+parser.add_argument('--raw', dest='raw', action='store_true', default=False, help='If set, will fill digi hit histograms with 1 instead of weight and no Energyd deposition histograms will be filled')
 options = parser.parse_args()
 tag = options.tag if options.tag else "phi-z-plots"
 path = '/eos/user/j/jaweiss/MuonBack/TRY5LiSc/11921562/' if options.version == 'TRY5LiSc' else '/eos/user/j/jaweiss/MuonBack/TRY2PlSc/'
 print(f"Using path: {path}")
+raw = options.raw
 
 
 threshold_list=[0,10,45,90]
@@ -24,16 +26,18 @@ origin_list=['cavern','SBT','upstream']
 # setup histograms 
 h = {}
 for origin in origin_list:
-    ut.bookHist(h, f'vetopoint_min_energydeposition_muons {origin}'			,'SBT (vetoPoint info) min(energy deposition) of muons 	; z(cm) ; #phi ;energy deposition(MeV)'	,100,3000.,8500.,36,0,360) #-3000.,3000.,36,0,360)
+    if not raw:
+        ut.bookHist(h, f'vetopoint_min_energydeposition_muons {origin}'			,'SBT (vetoPoint info) min(energy deposition) of muons 	; z(cm) ; #phi ;energy deposition(MeV)'	,100,3000.,8500.,36,0,360) #-3000.,3000.,36,0,360)
     ut.bookHist(h, f'vetopoint_topology_phi {origin}'					,'SBT (vetoPoint info) hitrate ; z(cm) ; #phi 	'			,100,3000.,8500.,36,0,360)
 
 for threshold in threshold_list:
     for origin in origin_list:
         ut.bookHist(h, f'{threshold}_digihit_topology_phi {origin}'			,f'SBT (Digitised hits @ {threshold}MeV threshold ) hitrate 	; z(cm) ; #phi ;			',100,3000.,8500.,36,0,360)#-3000.,3000.,36,0,360)
-        ut.bookHist(h, f'{threshold}_maxenergydeposition {origin}'			,f'SBT (Digitised hits @ {threshold}MeV threshold )			; max(Energy deposition) (GeV)'				,1000,0,1)
-        ut.bookHist(h, f'{threshold}_digihit_max_edepval_topology_phi {origin}'		,f'SBT (Digitised hits @ {threshold}MeV threshold ) min( max(energy deposition) per event ) 	; z(cm) ; #phi ;energy deposition(MeV)',100,3000.,8500.,36,0,360) #-3000.,3000.,36,0,360)
-        h[f'{threshold}_digihit_max_edepval_topology_phi {origin}'].GetZaxis().SetTitleOffset(-0.5);  
-        h[f'{threshold}_digihit_max_edepval_topology_phi {origin}'].GetZaxis().SetTitleSize(0.03);   
+        if not raw:
+            ut.bookHist(h, f'{threshold}_maxenergydeposition {origin}'			,f'SBT (Digitised hits @ {threshold}MeV threshold )			; max(Energy deposition) (GeV)'				,1000,0,1)
+            ut.bookHist(h, f'{threshold}_digihit_max_edepval_topology_phi {origin}'		,f'SBT (Digitised hits @ {threshold}MeV threshold ) min( max(energy deposition) per event ) 	; z(cm) ; #phi ;energy deposition(MeV)',100,3000.,8500.,36,0,360) #-3000.,3000.,36,0,360)
+            h[f'{threshold}_digihit_max_edepval_topology_phi {origin}'].GetZaxis().SetTitleOffset(-0.5);
+            h[f'{threshold}_digihit_max_edepval_topology_phi {origin}'].GetZaxis().SetTitleSize(0.03);
         ut.bookHist(h, f'{threshold}_digihit_z {origin}',f'SBT (Digitised hits @ {threshold}MeV threshold ) ; z(cm) ;',100,3000.,8500)#-3000.,3000)
 
 def Phicalc(x, y):
@@ -102,7 +106,7 @@ for jobDir in sorted(os.listdir(path)):
     if not os.path.isdir(jobPath):
         continue
     jobdirnmbr += 1
-    if options.test and jobdirnmbr>800:
+    if options.test and jobdirnmbr>20:
         break
     job_files  = os.listdir(jobPath)
     geo_files  = [f'{jobPath}/{fn}' for fn in job_files
@@ -140,7 +144,10 @@ for jobDir in sorted(os.listdir(path)):
                 Event_weight[global_event_id] = track.GetWeight()
                 break
 
-        weight=Event_weight[global_event_id]
+        if not raw:
+            weight = Event_weight[global_event_id]
+        elif raw:
+            weight = 1
 
         for key, veto_MCPoint in enumerate(tree_sim.vetoPoint): # for every particle hitting the SBT in the simulation
 
@@ -168,7 +175,7 @@ for jobDir in sorted(os.listdir(path)):
 
             h[ f'vetopoint_topology_phi {origin}'				 	].Fill(vetopoint_z,Phicalc(vetopoint_x,vetopoint_y),weight) 
 
-            if pdgCode in (13,-13):
+            if pdgCode in (13,-13) and not raw:
 
                 z_bin 	= h[f'vetopoint_min_energydeposition_muons {origin}'].GetXaxis().FindBin(vetopoint_z)
                 phi_bin = h[f'vetopoint_min_energydeposition_muons {origin}'].GetYaxis().FindBin(Phicalc(vetopoint_x,vetopoint_y))
@@ -236,13 +243,14 @@ for jobDir in sorted(os.listdir(path)):
             for origin in origin_list:
             
                 if maxeLoss[threshold][origin]==-1: continue
-                h[f'{threshold}_maxenergydeposition {origin}'].Fill(maxeLoss[threshold][origin],weight)
+                if not raw:
+                    h[f'{threshold}_maxenergydeposition {origin}'].Fill(maxeLoss[threshold][origin],weight)
 
-                z_bin 	= h[f'{threshold}_digihit_max_edepval_topology_phi {origin}'].GetXaxis().FindBin(max_z[threshold][origin])
-                phi_bin = h[f'{threshold}_digihit_max_edepval_topology_phi {origin}'].GetYaxis().FindBin(max_phi[threshold][origin])
+                    z_bin 	= h[f'{threshold}_digihit_max_edepval_topology_phi {origin}'].GetXaxis().FindBin(max_z[threshold][origin])
+                    phi_bin = h[f'{threshold}_digihit_max_edepval_topology_phi {origin}'].GetYaxis().FindBin(max_phi[threshold][origin])
 
-                if maxeLoss[threshold][origin]/0.001 < min_maxEloss_array[threshold][origin][z_bin-1, phi_bin-1]:  # -1 to adjust for array index
-                    min_maxEloss_array[threshold][origin][z_bin-1, phi_bin-1] = maxeLoss[threshold][origin]/0.001
+                    if maxeLoss[threshold][origin]/0.001 < min_maxEloss_array[threshold][origin][z_bin-1, phi_bin-1]:  # -1 to adjust for array index
+                        min_maxEloss_array[threshold][origin][z_bin-1, phi_bin-1] = maxeLoss[threshold][origin]/0.001
 
 
 
@@ -253,18 +261,22 @@ for z_bin in range(1,101):
         for origin in origin_list:
             for threshold in threshold_list:
                 min_eloss = min_maxEloss_array[threshold][origin][z_bin-1, phi_bin-1]
-                if min_eloss != np.inf:  # Only fill if there's a valid min eLoss
+                if min_eloss != np.inf and not raw:  # Only fill if there's a valid min eLoss
                     h[f'{threshold}_digihit_max_edepval_topology_phi {origin}'].SetBinContent(z_bin, phi_bin, min_eloss)
             
             min_eloss_veto = muon_min_eloss_array[origin][z_bin-1, phi_bin-1]
-            if min_eloss_veto != np.inf:  # Only fill if there's a valid min eLoss
+            if min_eloss_veto != np.inf and not raw:  # Only fill if there's a valid min eLoss
                 h[f'vetopoint_min_energydeposition_muons {origin}'].SetBinContent(z_bin, phi_bin, min_eloss_veto)	
 
+if raw:
+    tag = f"{tag}_raw"
 if options.version == "TRY5LiSc":
     out_file = ROOT.TFile(f"/eos/user/j/jaweiss/MuonBack/TRY5LiSc/z_phi_origin/{tag}.root","RECREATE")
 else: 
     out_file = ROOT.TFile(f"/eos/user/j/jaweiss/MuonBack/TRY2PlSc/z_phi_origin/{tag}.root","RECREATE")
 out_file.cd()
+
+print("saving file to ", out_file.GetName())
 
 for key in h:
     h[key].SetOption('HIST')

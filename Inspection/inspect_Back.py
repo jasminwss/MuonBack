@@ -13,9 +13,13 @@ ROOT.gROOT.SetBatch(True)
 PDGData = ROOT.TDatabasePDG.Instance()
 
 parser = ArgumentParser()
-parser.add_argument('--path', dest='path', default='/eos/user/j/jaweiss/MuonBack/TRY2PlSc')
+parser.add_argument('--path', dest='path', default='/eos/user/j/jaweiss/MuonBack/TRY5PlSc')
 parser.add_argument('--tag', dest='tag', default='')
+parser.add_argument('--raw', dest='raw', action='store_true', default=False, help='If set, will fill digi hit histograms with 1 instead of weight')
+parser.add_argument('--test', dest='test', action='store_true', default=False, help='If set, will only process the first some events for testing purposes')
 options = parser.parse_args()
+raw = options.raw
+test = options.test
 
 
 # setup histograms 
@@ -202,8 +206,12 @@ for threshold in threshold_list:
 	min_maxEloss_array[threshold]=np.full((100, 36), np.inf)  # Create a 2D array or dictionary to store minimum eLoss values per (z, phi) bin, initialized with inf
 ORIGIN_CATEGORIES = ('cavern', 'SBT', 'upstream')
 digihitrate_by_origin = {}   # [threshold][origin][detID] =  hitrate
+job_nmbr = 0
 
 for jobDir in sorted(os.listdir(options.path)):
+    if test and job_nmbr >= 50:  # Limit to first job for testing
+        break
+    job_nmbr += 1
     jobPath = f'{options.path}/{jobDir}'
     if not os.path.isdir(jobPath):
         continue
@@ -264,8 +272,10 @@ for jobDir in sorted(os.listdir(options.path)):
             if track.GetPdgCode() in [13, -13]:  # muon
                 Event_weight[global_event_id] = track.GetWeight()
                 break
-
-        weight = Event_weight[global_event_id]
+        if not raw:
+            weight = Event_weight[global_event_id]
+        else:
+            weight = 1.0  # If raw option is set, use weight=1 for all events
 
         event_origin = ORIGIN_MAP[classify_event_origin(tree_sim)]
 
@@ -441,7 +451,15 @@ for z_bin in range(1,101):
         if min_eloss_veto != np.inf:  # Only fill if there's a valid min eLoss
             h['vetopoint_min_energydeposition_muons'].SetBinContent(z_bin, phi_bin, min_eloss_veto)	
 
+if raw:
+    for hist in h.values():
+        hist.SetName(hist.GetName() + '_raw')
+
 tag = options.tag if options.tag else "inspection"
+if raw:
+    tag = tag + "_raw"
+if test:
+    tag = tag + "_test"
 
 out_file = ROOT.TFile(
     f"/afs/cern.ch/work/j/jaweiss/private/MuonBack/{tag}.root",
@@ -454,6 +472,7 @@ for key in h:
     h[key].Write()
 
 out_file.Close()
+print(f"Histograms written to /afs/cern.ch/work/j/jaweiss/private/MuonBack/{tag}.root")
 
 directory = './'
 print_result(tag)
