@@ -1,13 +1,13 @@
-executable          	= condor.sh
+executable          	= condorEdepo.sh
 should_transfer_files 	= YES
 arguments             	= $(ClusterId) $(ProcId)
 notify_user				= jasminvweiss@gmail.com
 notification 			= Always
 
 ##############################################################################################################
-output      = InspectBack.$(ClusterId).$(ProcId).out
-error       = InspectBack.$(ClusterId).$(ProcId).err
-log         = InspectBack.$(ClusterId).$(ProcId).log
+output      = logs_Edepo.$(ClusterId).$(ProcId).out
+error       = logs_Edepo.$(ClusterId).$(ProcId).err
+log         = logs_Edepo.$(ClusterId).$(ProcId).log
 ##############################################################################################################
 
 request_memory 		= 7000
@@ -17,7 +17,7 @@ max_retries      		= 3
 requirements     		= Machine =!= LastRemoteHost
 
 ##############################################################################################################
-+JobFlavour="workday"
++JobFlavour="tomorrow"
 #+MaxRuntime = 20
 ##############################################################################################################
 queue

@@ -9,13 +9,13 @@ import numpy as np
 ROOT.gROOT.SetBatch(True)
 
 parser = ArgumentParser()
-parser.add_argument('--version', dest='version', default= 'TRY5LiSc')
+parser.add_argument('--version', dest='version', default= 'TRY6LiSc')
 parser.add_argument('--tag', dest='tag', default='')
 parser.add_argument('--test', dest='test', action='store_true')
 parser.add_argument('--raw', dest='raw', action='store_true', default=False, help='If set, will fill digi hit histograms with 1 instead of weight and no Energyd deposition histograms will be filled')
 options = parser.parse_args()
 tag = options.tag if options.tag else "phi-z-plots"
-path = '/eos/user/j/jaweiss/MuonBack/TRY5LiSc/11921562/' if options.version == 'TRY5LiSc' else '/eos/user/j/jaweiss/MuonBack/TRY2PlSc/'
+path = '/eos/user/j/jaweiss/MuonBack/TRY6LiSc/11921562/' if options.version == 'TRY6LiSc' else '/eos/user/j/jaweiss/MuonBack/TRY5PlSc/'
 print(f"Using path: {path}")
 raw = options.raw
 
@@ -270,10 +270,10 @@ for z_bin in range(1,101):
 
 if raw:
     tag = f"{tag}_raw"
-if options.version == "TRY5LiSc":
-    out_file = ROOT.TFile(f"/eos/user/j/jaweiss/MuonBack/TRY5LiSc/z_phi_origin/{tag}.root","RECREATE")
+if options.version == "TRY6LiSc":
+    out_file = ROOT.TFile(f"/eos/user/j/jaweiss/MuonBack/TRY6LiSc/z_phi_origin/{tag}.root","RECREATE")
 else: 
-    out_file = ROOT.TFile(f"/eos/user/j/jaweiss/MuonBack/TRY2PlSc/z_phi_origin/{tag}.root","RECREATE")
+    out_file = ROOT.TFile(f"/eos/user/j/jaweiss/MuonBack/TRY5PlSc/z_phi_origin/{tag}.root","RECREATE")
 out_file.cd()
 
 print("saving file to ", out_file.GetName())
