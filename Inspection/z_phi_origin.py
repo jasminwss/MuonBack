@@ -99,6 +99,7 @@ for threshold in threshold_list:
     min_maxEloss_array[threshold]={o: np.full((100,36), np.inf) for o in origin_list} # Create a 3D array or dictionary to store minimum eLoss values per (z, phi) bin and origin, initialized with inf
 ORIGIN_CATEGORIES = ('cavern', 'SBT', 'upstream')
 digihitrate_by_origin = {}   # [threshold][origin][detID] =  hitrate
+exception_issues = {}
 
 jobdirnmbr = 0
 for jobDir in sorted(os.listdir(path)):
@@ -117,140 +118,149 @@ for jobDir in sorted(os.listdir(path)):
         print(f"Skipping {jobDir}: missing sim or geo file")
         continue
 
-    # Geo einmal laden
-    fgeo = None  # declare outside the loop
-    if sGeo is None:
-        try:
+    f_sim, fgeo = None, None
+    try:
+        # Geo einmal laden
+        if sGeo is None:
             fgeo = ROOT.TFile.Open(geo_files[0])
             ShipGeo = load_from_root_file(fgeo, "ShipGeo")
             print('ShipGeo loaded')
             sGeo = fgeo["FAIRGeom"]
-        except Exception as e:
-            print(f"Geo load failed: {e}")
 
 
-    # access sim trees (sim is not copied to reco anymore)
-    f_sim  = ROOT.TFile.Open(sim_files[0])
-    tree_sim  = f_sim.Get("cbmsim")
+        # access sim trees (sim is not copied to reco anymore)
+        f_sim  = ROOT.TFile.Open(sim_files[0])
+        tree_sim  = f_sim.Get("cbmsim")
         
-    for eventNr, event in enumerate(tree_sim): # UNNECESSARY 
-        #setup empty dicts
-        ElossPerDetId       = {}
-        listOfVetoPoints    = {}
-        originElossPerDetId = {}  # [detID][origin] = total Eloss from that origin
-        global_event_id += 1
-        for track in tree_sim.MCTrack:
-            if track.GetPdgCode() in (13,-13):
-                Event_weight[global_event_id] = track.GetWeight()
-                break
+        for eventNr, event in enumerate(tree_sim): 
+            #setup empty dicts
+            ElossPerDetId       = {}
+            listOfVetoPoints    = {}
+            originElossPerDetId = {}  # [detID][origin] = total Eloss from that origin
+            global_event_id += 1
+            for track in tree_sim.MCTrack:
+                if track.GetPdgCode() in (13,-13):
+                    Event_weight[global_event_id] = track.GetWeight()
+                    break
 
-        if not raw:
-            weight = Event_weight[global_event_id]
-        elif raw:
-            weight = 1
+            if not raw:
+                weight = Event_weight[global_event_id]
+            elif raw:
+                weight = 1
 
-        for key, veto_MCPoint in enumerate(tree_sim.vetoPoint): # for every particle hitting the SBT in the simulation
+            for key, veto_MCPoint in enumerate(tree_sim.vetoPoint): # for every particle hitting the SBT in the simulation
 
-            SBT_Event_weight[global_event_id] = Event_weight[global_event_id]  
-            total_particlehitrate  += Event_weight[global_event_id]  
+                SBT_Event_weight[global_event_id] = Event_weight[global_event_id]  
+                total_particlehitrate  += Event_weight[global_event_id]  
 
-            pdgCode  = tree_sim.MCTrack[veto_MCPoint.GetTrackID()].GetPdgCode()
-            detID    = veto_MCPoint.GetDetectorID()
+                pdgCode  = tree_sim.MCTrack[veto_MCPoint.GetTrackID()].GetPdgCode()
+                detID    = veto_MCPoint.GetDetectorID()
 
-            vetopoint_z,vetopoint_x,vetopoint_y = veto_MCPoint.GetZ(),veto_MCPoint.GetX(),veto_MCPoint.GetY()
-            Eloss = veto_MCPoint.GetEnergyLoss()
+                vetopoint_z,vetopoint_x,vetopoint_y = veto_MCPoint.GetZ(),veto_MCPoint.GetX(),veto_MCPoint.GetY()
+                Eloss = veto_MCPoint.GetEnergyLoss()
 
-            hitting_track = tree_sim.MCTrack[veto_MCPoint.GetTrackID()]
-            origin = classify_production_vertex(hitting_track)
+                hitting_track = tree_sim.MCTrack[veto_MCPoint.GetTrackID()]
+                origin = classify_production_vertex(hitting_track)
 
-            if detID not in ElossPerDetId:
-                ElossPerDetId[detID]=0
-                listOfVetoPoints[detID]=[]
-                originElossPerDetId[detID] = {o: 0.0 for o in ORIGIN_CATEGORIES}
+                if detID not in ElossPerDetId:
+                    ElossPerDetId[detID]=0
+                    listOfVetoPoints[detID]=[]
+                    originElossPerDetId[detID] = {o: 0.0 for o in ORIGIN_CATEGORIES}
 
-            ElossPerDetId[detID] += Eloss
-            listOfVetoPoints[detID].append(key)
-            originElossPerDetId[detID][origin] += Eloss
+                ElossPerDetId[detID] += Eloss
+                listOfVetoPoints[detID].append(key)
+                originElossPerDetId[detID][origin] += Eloss
 
 
-            h[ f'vetopoint_topology_phi {origin}'				 	].Fill(vetopoint_z,Phicalc(vetopoint_x,vetopoint_y),weight) 
+                h[ f'vetopoint_topology_phi {origin}'				 	].Fill(vetopoint_z,Phicalc(vetopoint_x,vetopoint_y),weight) 
 
-            if pdgCode in (13,-13) and not raw:
+                if pdgCode in (13,-13) and not raw:
 
-                z_bin 	= h[f'vetopoint_min_energydeposition_muons {origin}'].GetXaxis().FindBin(vetopoint_z)
-                phi_bin = h[f'vetopoint_min_energydeposition_muons {origin}'].GetYaxis().FindBin(Phicalc(vetopoint_x,vetopoint_y))
+                    z_bin 	= h[f'vetopoint_min_energydeposition_muons {origin}'].GetXaxis().FindBin(vetopoint_z)
+                    phi_bin = h[f'vetopoint_min_energydeposition_muons {origin}'].GetYaxis().FindBin(Phicalc(vetopoint_x,vetopoint_y))
 
-                # Skip underflow (0) and overflow (nBins+1)
-                if 1 <= z_bin <= 100 and 1 <= phi_bin <= 36:
-                    if (Eloss/0.001) < muon_min_eloss_array[origin][z_bin-1, phi_bin-1]:
-                        muon_min_eloss_array[origin][z_bin-1, phi_bin-1] = Eloss/0.001
+                    # Skip underflow (0) and overflow (nBins+1)
+                    if 1 <= z_bin <= 100 and 1 <= phi_bin <= 36:
+                        if (Eloss/0.001) < muon_min_eloss_array[origin][z_bin-1, phi_bin-1]:
+                            muon_min_eloss_array[origin][z_bin-1, phi_bin-1] = Eloss/0.001
 
-        #Explicit  Digitisation 
-        digiSBT = {}
-        detID_to_origin = {}
+            #Explicit  Digitisation 
+            digiSBT = {}
+            detID_to_origin = {}
 
-        for index,detID in enumerate(ElossPerDetId):
-            aHit = ROOT.vetoHit(detID,ElossPerDetId[detID]) # digitized hit object — combining the cell ID with the total Eloss into a single reconstructed hit
-            digiSBT[index] = aHit # storing all digi hits for the event
-            # dominant origin for this cell = whichever origin deposited the most Eloss
-            cell_origin = max(originElossPerDetId[detID], key=lambda o: originElossPerDetId[detID][o])
-            detID_to_origin[detID] = cell_origin
+            for index,detID in enumerate(ElossPerDetId):
+                aHit = ROOT.vetoHit(detID,ElossPerDetId[detID]) # digitized hit object — combining the cell ID with the total Eloss into a single reconstructed hit
+                digiSBT[index] = aHit # storing all digi hits for the event
+                # dominant origin for this cell = whichever origin deposited the most Eloss
+                cell_origin = max(originElossPerDetId[detID], key=lambda o: originElossPerDetId[detID][o])
+                detID_to_origin[detID] = cell_origin
 
-            for threshold in threshold_list:
-                if ElossPerDetId[detID]<0.001*threshold:
-                    continue
+                for threshold in threshold_list:
+                    if ElossPerDetId[detID]<0.001*threshold:
+                        continue
 
-                if f'{threshold}MeV' not in digihitrate_by_origin:
-                    digihitrate_by_origin[f'{threshold}MeV'] = {o: {} for o in ORIGIN_CATEGORIES}
+                    if f'{threshold}MeV' not in digihitrate_by_origin:
+                        digihitrate_by_origin[f'{threshold}MeV'] = {o: {} for o in ORIGIN_CATEGORIES}
 
-                if detID not in digihitrate_by_origin[f'{threshold}MeV'][cell_origin]:
-                    digihitrate_by_origin[f'{threshold}MeV'][cell_origin][detID] = 0
+                    if detID not in digihitrate_by_origin[f'{threshold}MeV'][cell_origin]:
+                        digihitrate_by_origin[f'{threshold}MeV'][cell_origin][detID] = 0
 
-                digihitrate_by_origin[f'{threshold}MeV'][cell_origin][detID] += Event_weight[global_event_id]
+                    digihitrate_by_origin[f'{threshold}MeV'][cell_origin][detID] += Event_weight[global_event_id]
             
 
-        #Reading Digitised Data
+            #Reading Digitised Data
 
-        maxeLoss = {t: {o: -1 for o in origin_list} for t in threshold_list} #maximum energy deposition percell
+            maxeLoss = {t: {o: -1 for o in origin_list} for t in threshold_list} #maximum energy deposition percell
         
-        max_z={t: {} for t in threshold_list}
-        max_phi={t: {} for t in threshold_list}
+            max_z={t: {} for t in threshold_list}
+            max_phi={t: {} for t in threshold_list}
 
-        for aHit in digiSBT.values():
+            for aHit in digiSBT.values():
 
-            x 		=aHit.GetX()
-            y 		=aHit.GetY()
-            z 	 	=aHit.GetZ()
-            eLoss  	=aHit.GetEloss()
-            detID 	=aHit.GetDetectorID()
-            shape_nr=int(ROOT.TMath.Floor(detID/100000))
-            cell_origin = detID_to_origin[detID]
+                x 		=aHit.GetX()
+                y 		=aHit.GetY()
+                z 	 	=aHit.GetZ()
+                eLoss  	=aHit.GetEloss()
+                detID 	=aHit.GetDetectorID()
+                shape_nr=int(ROOT.TMath.Floor(detID/100000))
+                cell_origin = detID_to_origin[detID]
 					
+                for threshold in threshold_list:
+                        if eLoss<0.001*threshold: continue
+
+                        if eLoss>maxeLoss[threshold][cell_origin]:
+                            maxeLoss[threshold][cell_origin] = eLoss
+                            max_z[threshold][cell_origin]   = z
+                            max_phi[threshold][cell_origin] = Phicalc(x,y)
+
+                        h[ f'{threshold}_digihit_topology_phi {cell_origin}'].Fill(z,Phicalc(x,y),weight)
+                        h[ f'{threshold}_digihit_z {cell_origin}'].Fill(z,weight)
+
+            
+
             for threshold in threshold_list:
-                    if eLoss<0.001*threshold: continue
-
-                    if eLoss>maxeLoss[threshold][cell_origin]:
-                        maxeLoss[threshold][cell_origin] = eLoss
-                        max_z[threshold][cell_origin]   = z
-                        max_phi[threshold][cell_origin] = Phicalc(x,y)
-
-                    h[ f'{threshold}_digihit_topology_phi {cell_origin}'].Fill(z,Phicalc(x,y),weight)
-                    h[ f'{threshold}_digihit_z {cell_origin}'].Fill(z,weight)
-
+                for origin in origin_list:
             
+                    if maxeLoss[threshold][origin]==-1: continue
+                    if not raw:
+                        h[f'{threshold}_maxenergydeposition {origin}'].Fill(maxeLoss[threshold][origin],weight)
 
-        for threshold in threshold_list:
-            for origin in origin_list:
-            
-                if maxeLoss[threshold][origin]==-1: continue
-                if not raw:
-                    h[f'{threshold}_maxenergydeposition {origin}'].Fill(maxeLoss[threshold][origin],weight)
+                        z_bin 	= h[f'{threshold}_digihit_max_edepval_topology_phi {origin}'].GetXaxis().FindBin(max_z[threshold][origin])
+                        phi_bin = h[f'{threshold}_digihit_max_edepval_topology_phi {origin}'].GetYaxis().FindBin(max_phi[threshold][origin])
 
-                    z_bin 	= h[f'{threshold}_digihit_max_edepval_topology_phi {origin}'].GetXaxis().FindBin(max_z[threshold][origin])
-                    phi_bin = h[f'{threshold}_digihit_max_edepval_topology_phi {origin}'].GetYaxis().FindBin(max_phi[threshold][origin])
+                        if maxeLoss[threshold][origin]/0.001 < min_maxEloss_array[threshold][origin][z_bin-1, phi_bin-1]:  # -1 to adjust for array index
+                            min_maxEloss_array[threshold][origin][z_bin-1, phi_bin-1] = maxeLoss[threshold][origin]/0.001
 
-                    if maxeLoss[threshold][origin]/0.001 < min_maxEloss_array[threshold][origin][z_bin-1, phi_bin-1]:  # -1 to adjust for array index
-                        min_maxEloss_array[threshold][origin][z_bin-1, phi_bin-1] = maxeLoss[threshold][origin]/0.001
+        f_sim.Close()
+        if fgeo:
+            fgeo.Close()
+    except Exception as e:
+        if f_sim:
+            f_sim.Close()
+        if fgeo:
+            fgeo.Close()
+        exception_issues[jobDir] = e
+        continue
 
 
 
@@ -283,4 +293,5 @@ for key in h:
     h[key].Write()
 
 out_file.Close()
-        
+print('Exceptions:\n', exception_issues)
+
