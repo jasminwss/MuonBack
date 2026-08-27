@@ -78,8 +78,8 @@ for origin in ["cavern", "SBT", "upstream"]:
 
 
 #make histogram without distinguishing origin
-pathTRY5 = "/eos/user/j/jaweiss/TRY5PlScTRY5LiScBranch.root"
-pathTRY6 = "/eos/user/j/jaweiss/TRY6LiSc_TRY5LiScBranch.root"
+pathTRY5 = "/afs/cern.ch/work/j/jaweiss/private/MuonBack/TRY5PlSc_full_onlySIM.root"
+pathTRY6 = "/afs/cern.ch/work/j/jaweiss/private/MuonBack/TRY6LiSc_full_onlySIM.root"
 
 
 

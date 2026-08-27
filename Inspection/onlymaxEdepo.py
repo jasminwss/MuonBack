@@ -16,7 +16,7 @@ path = '/eos/user/j/jaweiss/MuonBack/TRY6LiSc/11921562/' if options.version == '
 print(f"Using path: {path}")
 
 
-threshold_list=[0,10,45,90]
+threshold_list=[0,10,45,90,100,115,130]
 
 # setup histograms
 h = {}
