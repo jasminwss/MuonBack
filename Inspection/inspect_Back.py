@@ -21,6 +21,8 @@ options = parser.parse_args()
 raw = options.raw
 test = options.test
 
+print("using path:", options.path)
+
 
 # setup histograms 
 h = {}

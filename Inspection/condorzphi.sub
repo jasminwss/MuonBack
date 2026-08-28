@@ -1,6 +1,6 @@
 executable          	= condorzphi.sh
 should_transfer_files 	= YES
-arguments             	= $(ClusterId) $(ProcId)
+arguments             	= $(script_args)
 notify_user				= jasminvweiss@gmail.com
 notification 			= Always
 
