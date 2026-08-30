@@ -20,8 +20,9 @@ print(f"Using path: {path}")
 raw = options.raw
 
 
-threshold_list=[0,10,45,90]
+threshold_list=[0,10,45,90,110,130]
 origin_list=['cavern','SBT','upstream']
+ORIGIN_MAP = {'muon_cavern': 'cavern', 'muon_SBT': 'SBT', 'EM_debris_upstream': 'upstream'}
 
 # setup histograms 
 h = {}
@@ -107,7 +108,7 @@ for jobDir in sorted(os.listdir(path)):
     if not os.path.isdir(jobPath):
         continue
     jobdirnmbr += 1
-    if options.test and jobdirnmbr>20:
+    if options.test and jobdirnmbr>3:
         break
     job_files  = os.listdir(jobPath)
     geo_files  = [f'{jobPath}/{fn}' for fn in job_files
@@ -148,7 +149,7 @@ for jobDir in sorted(os.listdir(path)):
             elif raw:
                 weight = 1
 
-            origin = classify_event_origin(event)
+            origin = ORIGIN_MAP[classify_event_origin(tree_sim)]
 
             for key, veto_MCPoint in enumerate(tree_sim.vetoPoint): # for every particle hitting the SBT in the simulation
 
@@ -282,6 +283,8 @@ for z_bin in range(1,101):
 
 if raw:
     tag = f"{tag}_raw"
+if options.test:
+    tag = f"{tag}_test"
 if options.version == "TRY6LiSc":
     out_file = ROOT.TFile(f"/eos/user/j/jaweiss/MuonBack/TRY6LiSc/z_phi_origin/{tag}.root","RECREATE")
 else: 

@@ -9,9 +9,9 @@ ROOT.gStyle.SetOptStat(0)
 # The histograms are booked with 1000 bins over 0..1 GeV  ->  1 MeV / bin.
 # BIN_WIDTH_MEV sets how wide the plotted bins should be; pick a divisor of
 # 1000 MeV (2, 4, 5, 10, 20, 25, 50, ...) so the rebinning is exact.
-BIN_WIDTH_MEV = 20
+BIN_WIDTH_MEV = 50
 # Zoom the x-axis onto low energy depositions (GeV). None = full 0..1 GeV.
-XMAX_GEV = None
+XMAX_GEV = 1
 # ---------------------------------------------------------------------------
 
 pathTRY5 = "/afs/cern.ch/work/j/jaweiss/private/MuonBack/TRY5PlSc_onlymaxEdepo.root"
@@ -107,6 +107,6 @@ for name in plots_Edepo:
     leg.AddEntry(h6, f"TRY6 (LiSc):  Integral = {integral6:.3e}, Entries = {entries6:.0f}", "le")
     leg.Draw()
 
-    outname = f"compare_{name}.png"
+    outname = f"compare_{name}_{XMAX_GEV}.png"
     for outdir in outdirs:
         canvas.SaveAs(os.path.join(outdir, outname))
