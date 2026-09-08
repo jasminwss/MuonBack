@@ -261,6 +261,11 @@ for jobDir in sorted(os.listdir(options.path)):
             #sim_entry = event.ShipEventHeader.GetMCEntryNumber()
             #tree_sim.GetEntry(sim_entry)
 
+            #das matching hier oben ist falsch, richtig wäre vlt 
+            #for i in range(tree.GetEntries()):
+             #   tree.GetEntry(i)
+              #  tree_sim.GetEntry(i)
+
             #setup empty dicts
             ElossPerDetId       = {}
             listOfVetoPoints    = {}
