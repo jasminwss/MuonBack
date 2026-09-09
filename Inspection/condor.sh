@@ -16,4 +16,4 @@ echo "Using FAIRSHIP=$FAIRSHIP (pixi env)"
 
 #######################################################################################
 
-"${PIXI_RUN[@]}" python /afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/inspect_Back.py --tag TRY5LiSc_full_onlySIM --path /eos/user/j/jaweiss/MuonBack/TRY5PlSc --raw
+"${PIXI_RUN[@]}" python /afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/inspect_Back_matched.py --tag TRY5LiSc_full_matchedRecoToSim --path /eos/user/j/jaweiss/MuonBack/TRY5PlSc --test
