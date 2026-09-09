@@ -5,9 +5,9 @@ notify_user				= jasminvweiss@gmail.com
 notification 			= Always
 
 ##############################################################################################################
-output      = logs_Edepo.$(ClusterId).$(ProcId).out
-error       = logs_Edepo.$(ClusterId).$(ProcId).err
-log         = logs_Edepo.$(ClusterId).$(ProcId).log
+output      = logs/logs_Edepo.$(ClusterId).$(ProcId).out
+error       = logs/logs_Edepo.$(ClusterId).$(ProcId).err
+log         = logs/logs_Edepo.$(ClusterId).$(ProcId).log
 ##############################################################################################################
 
 request_memory 		= 7000
