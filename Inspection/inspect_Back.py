@@ -319,30 +319,14 @@ for jobDir in sorted(os.listdir(options.path)):
             print('ShipGeo loaded')
             sGeo = fgeo["FAIRGeom"]
 
-
-        # access reco and sim trees (sim is not copied to reco anymore)
+        # access reco and sim trees (sim is not copied to reco anymore) but sim is sufficient
         #f = ROOT.TFile.Open(reco_files[0])
         #tree = f["ship_reco_sim"]
         f_sim  = ROOT.TFile.Open(sim_files[0])
         tree_sim  = f_sim.Get("cbmsim")
-
-        #print("reco entries:", tree.GetEntries())
-        #print("sim  entries:", tree_sim.GetEntries())
-
-        # Check event IDs match at a few entries
-        #for i, event in enumerate(tree):
-          #  tree.GetEntry(i)
-         #   tree_sim.GetEntry(i)
-           # if tree.ShipEventHeader.GetMCEntryNumber() != tree_sim.MCEventHeader.GetEventID():
-            #    print(f"Mismatch at entry {i}: reco eventID={tree.ShipEventHeader.GetMCEntryNumber()}, "
-             #         f"sim eventID={tree_sim.MCEventHeader.GetEventID()}")
         
-        for eventNr, event in enumerate(tree_sim): # UNNECESSARY 
-            # sync sim tree to this reco event
-            #sim_entry = event.ShipEventHeader.GetMCEntryNumber()
-            #tree_sim.GetEntry(sim_entry)
-
-            #das matching hier oben ist falsch, richtig wäre vlt 
+        for eventNr, event in enumerate(tree_sim): 
+    
             #for i in range(tree.GetEntries()):
              #   tree.GetEntry(i)
               #  tree_sim.GetEntry(i)
@@ -396,8 +380,6 @@ for jobDir in sorted(os.listdir(options.path)):
                     #print(f"New particle: {particle_name} (PDG code: {pdgCode})")
 
                 veto_pdg_key = [k for k, v in sbt_pdg_list.items() if v == particle_name][0]
-                #print(f"Particle: {particle_name}, PDG code: {pdgCode}, assigned key: {veto_pdg_key}")
-                #print(f"particle_name][0]{particle_name[0]}")
                 #Particle: e-, PDG code: 11, assigned key: 1
                 #particle_name][0]e
 
@@ -475,8 +457,6 @@ for jobDir in sorted(os.listdir(options.path)):
                         maxeLoss[threshold]= eLoss
                         max_z[threshold]   = z
                         max_phi[threshold] = Phicalc(x,y)
-
-                    #print(ElossPerDetId[detID],maxeLoss)
 						
                     if eLoss==maxeLoss[threshold]:
                         nmaxcells[threshold]+=1
@@ -488,10 +468,6 @@ for jobDir in sorted(os.listdir(options.path)):
                     h[ f'{threshold}_digihit_rate_cellwise'				].Fill(detID,weight)
                     h[ f'{threshold}_digihit_energydeposition'			].Fill(eLoss,weight)
                     h[ f'{threshold}_digihit_energydeposition_shapewise'].Fill(shape_nr,eLoss,weight)
-
-                    # Update the min_maxEloss_array if the current eLoss is smaller than the stored value
-                    #h[ f'{threshold}_digihit_max_edepval_topology_phi'			  ].Fill(z,Phicalc(x,y),eLoss/0.001)
-                    #print('ElossPerDetId[detID]',maxeLoss,nmaxcells)
 
             for threshold in threshold_list:
 
