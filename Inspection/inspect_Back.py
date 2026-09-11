@@ -138,29 +138,110 @@ def print_result(tag):
 		readme.write("\n  --------------------------------------------------------------------------------\n\n")
 		
 		
-		header = "  {:10}\t {:>12}\t {:>12}\t {:>12}\t {:>12}".format(
-				'THRESHOLD', 'TOTAL (MHz)', 'cavern (MHz)', 'SBT (MHz)', 'upstream (MHz)')
+		header = "  {:10}\t {:>12}\t {:>12}\t {:>12}\t {:>12}\t {:>18}\t {:>18}".format(
+				'THRESHOLD', 'TOTAL (MHz)', 'cavern (MHz)', 'SBT (MHz)', 'upstream (MHz)',
+				'hottest cell (MHz)', '2nd cell (MHz)')
 		print(header)
-		print("  " + "-"*80)
-		readme.write("\n\n" + header + "\n  " + "-"*80)
+		print("  " + "-"*120)
+		readme.write("\n\n" + header + "\n  " + "-"*120)
+
+		# digi hit rate vs SBT threshold -> TGraphs written at the end of this function
+		g_total   = ROOT.TGraph();  g_total.SetName('digihitrate_vs_threshold_total')
+		g_hottest = ROOT.TGraph();  g_hottest.SetName('digihitrate_vs_threshold_hottest_cell')
+		g_second  = ROOT.TGraph();  g_second.SetName('digihitrate_vs_threshold_second_cell')
+		g_total.SetTitle('total digi hit rate;SBT threshold (MeV);rate (MHz)')
+		g_hottest.SetTitle('hottest cell digi hit rate;SBT threshold (MeV);rate (MHz)')
+		g_second.SetTitle('2nd hottest cell digi hit rate;SBT threshold (MeV);rate (MHz)')
+		# points only, no connecting line: these are measurements at a handful of
+		# discrete thresholds, not a curve. SetLineWidth(0) keeps the line off even
+		# if something draws with a line option later (e.g. TBrowser's default 'alp').
+		for g, mstyle, mcolor in ((g_total, 20, ROOT.kBlack), (g_hottest, 21, ROOT.kRed + 1), (g_second, 22, ROOT.kAzure + 1)):
+			g.SetMarkerStyle(mstyle)
+			g.SetMarkerSize(1.3)
+			g.SetMarkerColor(mcolor)
+			g.SetLineWidth(0)
+		hottest_cells = {}   # threshold -> ((detID, rate), (detID, rate)) for the block below
 
 		for threshold in threshold_list:
 			tkey = f'{threshold}MeV'
 			origin_totals = {o: sum(digihitrate_by_origin.get(tkey, {}).get(o, {}).values()) for o in ORIGIN_CATEGORIES}
 			total = sum(origin_totals.values())
 
-			line = " {:5} MeV\t {:>12.4f}\t {:>12.4f}\t {:>12.4f}\t {:>12.4f}".format(
+			# rate per cell, summed back over the origin split
+			cell_rate = {}
+			for o in ORIGIN_CATEGORIES:
+				for detID, r in digihitrate_by_origin.get(tkey, {}).get(o, {}).items():
+					cell_rate[detID] = cell_rate.get(detID, 0.0) + r
+			ranked = sorted(cell_rate.items(), key=lambda kv: kv[1], reverse=True)
+			hottest_id, hottest_rate = ranked[0] if len(ranked) > 0 else (-1, 0.0)
+			second_id,  second_rate  = ranked[1] if len(ranked) > 1 else (-1, 0.0)
+			hottest_cells[threshold] = ((hottest_id, hottest_rate), (second_id, second_rate))
+
+			g_total.SetPoint(  g_total.GetN(),   threshold, total        * 1e-6)
+			g_hottest.SetPoint(g_hottest.GetN(), threshold, hottest_rate * 1e-6)
+			g_second.SetPoint( g_second.GetN(),  threshold, second_rate  * 1e-6)
+
+			line = " {:5} MeV\t {:>12.4f}\t {:>12.4f}\t {:>12.4f}\t {:>12.4f}\t {:>18.4f}\t {:>18.4f}".format(
 				threshold,
 				total * 1e-6,
 				origin_totals['cavern']   * 1e-6,
 				origin_totals['SBT']      * 1e-6,
 				origin_totals['upstream'] * 1e-6,
+				hottest_rate * 1e-6,
+				second_rate  * 1e-6,
 			)
 			print(line)
 			readme.write("\n" + line)
 
-		print(       "\n  " + "-"*80 + "\n")
-		readme.write("\n  " + "-"*80 + "\n")
+		print(       "\n  " + "-"*120 + "\n")
+		readme.write("\n  " + "-"*120 + "\n")
+
+		# which cell carries the hottest rate at each threshold. For TRY6 the hottest
+		# cell can be dominated by a single very-high-weight muon, so the 2nd cell could be
+		# the more representative number there.
+		cell_hdr = "  {:10}\t {:>16}\t {:>16}\t {:>16}\t {:>16}".format(
+				'THRESHOLD', 'hottest detID', 'hottest (MHz)', '2nd detID', '2nd (MHz)')
+		print("\n" + cell_hdr)
+		print("  " + "-"*90)
+		readme.write("\n\n" + cell_hdr + "\n  " + "-"*90)
+		for threshold in threshold_list:
+			(h_id, h_r), (s_id, s_r) = hottest_cells[threshold]
+			cline = "  {:5} MeV\t {:>16}\t {:>16.4f}\t {:>16}\t {:>16.4f}".format(
+				threshold, h_id, h_r * 1e-6, s_id, s_r * 1e-6)
+			print(cline)
+			readme.write("\n" + cline)
+		print(       "\n  " + "-"*90 + "\n")
+		readme.write("\n  " + "-"*90 + "\n")
+
+	# digi hit rate vs threshold, as graphs, next to the readme's histogram file.
+	# also stash a ready-drawn canvas (points, log-y, legend) so opening the file in
+	# a TBrowser shows the points right away, not a line squished flat by the linear
+	# default axis (the total spans ~2 orders of magnitude across thresholds).
+	fg = ROOT.TFile(directory + tag + '_rate_vs_threshold.root', 'RECREATE')
+	g_total.Write(); g_hottest.Write(); g_second.Write()
+
+	mg = ROOT.TMultiGraph()
+	mg.SetName('mg_digihitrate_vs_threshold')
+	mg.SetTitle('digi hit rate vs SBT threshold;SBT digi threshold (MeV);digi hit rate (MHz)')
+	mg.Add(g_total,   'P')
+	mg.Add(g_hottest, 'P')
+	mg.Add(g_second,  'P')
+
+	c_rate = ROOT.TCanvas('c_digihitrate_vs_threshold', 'digi hit rate vs threshold', 800, 600)
+	c_rate.SetLogy()
+	c_rate.SetGridx(); c_rate.SetGridy()
+	mg.Draw('AP')
+
+	leg = ROOT.TLegend(0.62, 0.72, 0.88, 0.88)
+	leg.SetBorderSize(0); leg.SetFillStyle(0)
+	leg.AddEntry(g_total,   'total',        'p')
+	leg.AddEntry(g_hottest, 'hottest cell', 'p')
+	leg.AddEntry(g_second,  '2nd cell',     'p')
+	leg.Draw()
+	c_rate.Write()
+
+	fg.Close()
+	print('rate-vs-threshold graphs (+ ready canvas) written to ' + directory + tag + '_rate_vs_threshold.root')
 
 ORIGIN_MAP = {'muon_cavern': 'cavern', 'muon_SBT': 'SBT', 'EM_debris_upstream': 'upstream'}
 
