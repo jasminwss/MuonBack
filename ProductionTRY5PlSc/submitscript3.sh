@@ -16,13 +16,16 @@ ClusterId=$5
 
 RUN_ID="${ClusterId}_${ProcId}"
 
-OUTPUT_BASE=/eos/user/j/jaweiss/MuonBack/TRY5PlSc
+OUTPUT_BASE=/eos/user/j/jaweiss/MuonBack/TRY5LiSc
 OUTPUT_DIR=${OUTPUT_BASE}/${ClusterId}/job_${ProcId}   # ← one folder per job
-mkdir -p "$OUTPUT_DIR"
+# mkdir -p can race on EOS when all jobs of a cluster create the shared
+# ClusterId parent dir at once ("File exists" despite -p); if the dir is
+# there afterwards, that's fine, so don't let set -e kill the job over it.
+mkdir -p "$OUTPUT_DIR" || [ -d "$OUTPUT_DIR" ] || { echo "ERROR: could not create $OUTPUT_DIR"; exit 1; }
 
 [ -f "$inputFile" ] || { echo "ERROR: input file missing: $inputFile"; exit 1; }
 
-FAIRSHIP=/afs/cern.ch/work/j/jaweiss/FairShip
+FAIRSHIP=/eos/user/j/jaweiss/FairShip
 export QT_QPA_PLATFORM=offscreen   # headless node: Geant4's Qt UI otherwise aborts with qFatal
 PIXI_BIN=/afs/cern.ch/work/j/jaweiss/.pixi/bin/pixi
 PIXI_RUN=("$PIXI_BIN" run --frozen --manifest-path "$FAIRSHIP/pixi.toml")

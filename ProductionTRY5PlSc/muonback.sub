@@ -1,0 +1,30 @@
+executable = submitscript3.sh 
+
+notify_user				= jasminvweiss@gmail.com
+notification 			= Always
+
+arguments = "$(inputFile) $(startEvent) $(nEvents) $(Process) $(Cluster)"
+
+output      = /eos/user/j/jaweiss/MuonBack/TRY5LiSc/condorlogs/job_$(Cluster)_$(Process).out
+error       = /eos/user/j/jaweiss/MuonBack/TRY5LiSc/condorlogs/job_$(Cluster)_$(Process).err
+log         = /eos/user/j/jaweiss/MuonBack/TRY5LiSc/condorlogs/job_$(Cluster).log
+
+request_CPUs   = 1
+request_memory = 4 GB
+request_disk   = 5 GB
+
++JobFlavour = "tomorrow"
+
+on_exit_remove   		= (ExitBySignal == False) && (ExitCode == 0)
+max_retries      		= 3
+
+# Ensure the job has access to your EOS/CVMFS credentials
+requirements = (OpSysAndVer =?= "AlmaLinux9") && (Machine =!= LastRemoteHost)
++REQUIRED_OS = "AlmaLinux9"
+#use_x509userproxy = True
+
+# throttle: cap concurrently running jobs so we don't hit AFS
+# (submitscript3.sh reads FAIRSHIP from AFS) with thousands at once
+max_materialize = 200
+
+queue inputFile,startEvent,nEvents from sim_jobs.txt
