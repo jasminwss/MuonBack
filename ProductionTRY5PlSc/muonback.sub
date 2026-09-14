@@ -25,6 +25,7 @@ requirements = (OpSysAndVer =?= "AlmaLinux9") && (Machine =!= LastRemoteHost)
 
 # throttle: cap concurrently running jobs so we don't hit AFS
 # (submitscript3.sh reads FAIRSHIP from AFS) with thousands at once
+# now fairship is syned to eos 
 max_materialize = 200
 
-queue inputFile,startEvent,nEvents from sim_jobs.txt
+queue inputFile,startEvent,nEvents from sim_jobs_short.txt

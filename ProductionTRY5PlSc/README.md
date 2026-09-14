@@ -18,10 +18,15 @@ In `muonback.sub`:
 - Merged the two duplicate `requirements` lines (the second was silently
   overwriting the first, so the "don't reuse last host" condition was never
   applied).
+- Copied the FairShip build (7.7GB, 132082 files) once to `/eos/user/j/jaweiss/FairShip`
+  and pointed `FAIRSHIP=` in `submitscript3.sh` there, so jobs read from EOS
+  instead of AFS. Copy finished and verified (file count matches AFS).
 
 ## Still open
 
-`submitscript3.sh` still reads FairShip from AFS. Plan: copy the build once
-to `/eos/user/j/jaweiss/FairShip` and point `FAIRSHIP=` in the script there,
-so jobs read from EOS instead of AFS. Not done yet — pending go-ahead, since
-the build is 7.7 GB and copying still means reading it once from AFS.
+`PIXI_BIN` in `submitscript3.sh` still points at
+`/afs/cern.ch/work/j/jaweiss/.pixi/bin/pixi` (AFS, ~74MB). Small and fine
+with `max_materialize = 200`, but worth moving to EOS too at some point.
+
+Test with `sim_jobs_short.txt` before switching back to the full
+`sim_jobs.txt` (8255 jobs).

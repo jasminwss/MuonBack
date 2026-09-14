@@ -1,0 +1,134 @@
+Info in <TGeoManager::CloseGeometry>: Geometry loaded from file...
+Info in <TGeoManager::SetTopVolume>: Top volume is cave. Master volume is cave
+Info in <TGeoNavigator::BuildCache>: --- Maximum geometry depth set to 100
+Info in <TGeoManager::Voxelize>: Voxelizing...
+Info in <TGeoManager::CountLevels>: max level = 5, max placements = 14153
+Info in <TGeoManager::CloseGeometry>: 46607 nodes/ 694 volume UID's in FAIR geometry
+Info in <TGeoManager::CloseGeometry>: ----------------modeler ready----------------
+total LiScY cells: 244
+number values seen: [1, 2]
+blockNr values seen: [1, 2]
+
+LiScY shape2, number=2, position=1 across Zlayer (block2):
+  Zlayer=  1 z= 3433.8 x=   64.5 y=  -40.5 phi= 57.87
+  Zlayer=  2 z= 3515.8 x=   66.9 y=  -41.2 phi= 58.41
+  Zlayer=  3 z= 3597.8 x=   69.4 y=  -41.8 phi= 58.91
+  Zlayer=  4 z= 3679.8 x=   71.8 y=  -42.5 phi= 59.39
+  Zlayer=  5 z= 3761.8 x=   74.3 y=  -43.2 phi= 59.83
+  Zlayer=  6 z= 3843.8 x=   76.8 y=  -43.9 phi= 60.26
+  Zlayer=  7 z= 3925.8 x=   79.2 y=  -44.5 phi= 60.66
+  Zlayer=  8 z= 4007.8 x=   81.7 y=  -45.2 phi= 61.03
+  Zlayer=  9 z= 4089.8 x=   84.1 y=  -45.9 phi= 61.39
+  Zlayer= 10 z= 4171.8 x=   86.6 y=  -46.6 phi= 61.73
+  Zlayer= 11 z= 4253.8 x=   89.1 y=  -47.2 phi= 62.06
+  Zlayer= 12 z= 4335.8 x=   91.5 y=  -47.9 phi= 62.36
+  Zlayer= 13 z= 4417.8 x=   94.0 y=  -48.6 phi= 62.66
+  Zlayer= 14 z= 4499.8 x=   96.4 y=  -49.3 phi= 62.94
+  Zlayer= 15 z= 4581.8 x=   98.9 y=  -49.9 phi= 63.20
+  Zlayer= 16 z= 4663.8 x=  101.4 y=  -50.6 phi= 63.46
+  Zlayer= 17 z= 4745.8 x=  103.8 y=  -51.3 phi= 63.70
+  Zlayer= 18 z= 4827.8 x=  106.3 y=  -52.0 phi= 63.94
+  Zlayer= 19 z= 4909.8 x=  108.7 y=  -52.7 phi= 64.16
+  Zlayer= 20 z= 4991.8 x=  111.2 y=  -53.3 phi= 64.38
+  Zlayer= 21 z= 5073.8 x=  113.7 y=  -54.0 phi= 64.58
+  Zlayer= 22 z= 5155.8 x=  116.1 y=  -54.7 phi= 64.78
+  Zlayer= 23 z= 5237.8 x=  118.6 y=  -55.4 phi= 64.97
+  Zlayer= 24 z= 5319.8 x=  121.0 y=  -56.0 phi= 65.16
+  Zlayer= 25 z= 5401.8 x=  123.5 y=  -56.7 phi= 65.33
+  Zlayer= 26 z= 5483.8 x=  126.0 y=  -57.4 phi= 65.51
+  Zlayer= 27 z= 5565.8 x=  128.4 y=  -58.1 phi= 65.67
+  Zlayer= 28 z= 5647.8 x=  130.9 y=  -58.7 phi= 65.83
+  Zlayer= 29 z= 5729.8 x=  133.3 y=  -59.4 phi= 65.98
+  Zlayer= 30 z= 5811.8 x=  135.8 y=  -60.1 phi= 66.13
+  Zlayer= 31 z= 5893.8 x=  138.3 y=  -60.8 phi= 66.27
+  Zlayer= 32 z= 5975.8 x=  140.7 y=  -61.4 phi= 66.41
+  Zlayer= 33 z= 6057.8 x=  143.2 y=  -62.1 phi= 66.54
+  Zlayer= 34 z= 6139.8 x=  145.6 y=  -62.8 phi= 66.67
+  Zlayer= 35 z= 6221.8 x=  148.1 y=  -63.5 phi= 66.80
+  Zlayer= 36 z= 6303.8 x=  150.6 y=  -64.2 phi= 66.92
+  Zlayer= 37 z= 6385.8 x=  153.0 y=  -64.8 phi= 67.04
+  Zlayer= 38 z= 6467.8 x=  155.5 y=  -65.5 phi= 67.15
+  Zlayer= 39 z= 6549.8 x=  157.9 y=  -66.2 phi= 67.26
+  Zlayer= 40 z= 6631.8 x=  160.4 y=  -66.9 phi= 67.37
+  Zlayer= 41 z= 6713.8 x=  162.9 y=  -67.5 phi= 67.48
+  Zlayer= 42 z= 6795.8 x=  165.3 y=  -68.2 phi= 67.58
+  Zlayer= 43 z= 6877.8 x=  167.8 y=  -68.9 phi= 67.68
+  Zlayer= 44 z= 6959.8 x=  170.2 y=  -69.6 phi= 67.77
+  Zlayer= 45 z= 7041.8 x=  172.7 y=  -70.2 phi= 67.87
+  Zlayer= 46 z= 7123.8 x=  175.2 y=  -70.9 phi= 67.96
+  Zlayer= 47 z= 7205.8 x=  177.6 y=  -71.6 phi= 68.05
+  Zlayer= 48 z= 7287.8 x=  180.1 y=  -72.3 phi= 68.13
+  Zlayer= 49 z= 7369.8 x=  182.5 y=  -72.9 phi= 68.22
+  Zlayer= 50 z= 7451.8 x=  185.0 y=  -73.6 phi= 68.30
+  Zlayer= 51 z= 7533.8 x=  187.5 y=  -74.3 phi= 68.38
+  Zlayer= 52 z= 7615.8 x=  189.9 y=  -75.0 phi= 68.46
+  Zlayer= 53 z= 7697.8 x=  192.4 y=  -75.7 phi= 68.53
+  Zlayer= 54 z= 7779.8 x=  194.8 y=  -76.3 phi= 68.61
+  Zlayer= 55 z= 7861.8 x=  197.3 y=  -77.0 phi= 68.68
+  Zlayer= 56 z= 7943.8 x=  199.8 y=  -77.7 phi= 68.75
+  Zlayer= 57 z= 8025.8 x=  202.2 y=  -78.4 phi= 68.82
+  Zlayer= 58 z= 8107.8 x=  204.7 y=  -79.0 phi= 68.89
+  Zlayer= 59 z= 8189.8 x=  207.1 y=  -79.7 phi= 68.95
+  Zlayer= 60 z= 8271.8 x=  209.6 y=  -80.4 phi= 69.02
+
+LiScY shape2, number=1, position=1 across Zlayer (block2):
+  Zlayer=  1 z= 3433.8 x=   64.5 y=   40.5 phi=122.13
+  Zlayer=  2 z= 3515.8 x=   66.9 y=   41.2 phi=121.59
+  Zlayer=  3 z= 3597.8 x=   69.4 y=   41.8 phi=121.09
+  Zlayer=  4 z= 3679.8 x=   71.8 y=   42.5 phi=120.61
+  Zlayer=  5 z= 3761.8 x=   74.3 y=   43.2 phi=120.17
+  Zlayer=  6 z= 3843.8 x=   76.8 y=   43.9 phi=119.74
+  Zlayer=  7 z= 3925.8 x=   79.2 y=   44.5 phi=119.34
+  Zlayer=  8 z= 4007.8 x=   81.7 y=   45.2 phi=118.97
+  Zlayer=  9 z= 4089.8 x=   84.1 y=   45.9 phi=118.61
+  Zlayer= 10 z= 4171.8 x=   86.6 y=   46.6 phi=118.27
+  Zlayer= 11 z= 4253.8 x=   89.1 y=   47.2 phi=117.94
+  Zlayer= 12 z= 4335.8 x=   91.5 y=   47.9 phi=117.64
+  Zlayer= 13 z= 4417.8 x=   94.0 y=   48.6 phi=117.34
+  Zlayer= 14 z= 4499.8 x=   96.4 y=   49.3 phi=117.06
+  Zlayer= 15 z= 4581.8 x=   98.9 y=   49.9 phi=116.80
+  Zlayer= 16 z= 4663.8 x=  101.4 y=   50.6 phi=116.54
+  Zlayer= 17 z= 4745.8 x=  103.8 y=   51.3 phi=116.30
+  Zlayer= 18 z= 4827.8 x=  106.3 y=   52.0 phi=116.06
+  Zlayer= 19 z= 4909.8 x=  108.7 y=   52.7 phi=115.84
+  Zlayer= 20 z= 4991.8 x=  111.2 y=   53.3 phi=115.62
+  Zlayer= 21 z= 5073.8 x=  113.7 y=   54.0 phi=115.42
+  Zlayer= 22 z= 5155.8 x=  116.1 y=   54.7 phi=115.22
+  Zlayer= 23 z= 5237.8 x=  118.6 y=   55.4 phi=115.03
+  Zlayer= 24 z= 5319.8 x=  121.0 y=   56.0 phi=114.84
+  Zlayer= 25 z= 5401.8 x=  123.5 y=   56.7 phi=114.67
+  Zlayer= 26 z= 5483.8 x=  126.0 y=   57.4 phi=114.49
+  Zlayer= 27 z= 5565.8 x=  128.4 y=   58.1 phi=114.33
+  Zlayer= 28 z= 5647.8 x=  130.9 y=   58.7 phi=114.17
+  Zlayer= 29 z= 5729.8 x=  133.3 y=   59.4 phi=114.02
+  Zlayer= 30 z= 5811.8 x=  135.8 y=   60.1 phi=113.87
+  Zlayer= 31 z= 5893.8 x=  138.3 y=   60.8 phi=113.73
+  Zlayer= 32 z= 5975.8 x=  140.7 y=   61.4 phi=113.59
+  Zlayer= 33 z= 6057.8 x=  143.2 y=   62.1 phi=113.46
+  Zlayer= 34 z= 6139.8 x=  145.6 y=   62.8 phi=113.33
+  Zlayer= 35 z= 6221.8 x=  148.1 y=   63.5 phi=113.20
+  Zlayer= 36 z= 6303.8 x=  150.6 y=   64.2 phi=113.08
+  Zlayer= 37 z= 6385.8 x=  153.0 y=   64.8 phi=112.96
+  Zlayer= 38 z= 6467.8 x=  155.5 y=   65.5 phi=112.85
+  Zlayer= 39 z= 6549.8 x=  157.9 y=   66.2 phi=112.74
+  Zlayer= 40 z= 6631.8 x=  160.4 y=   66.9 phi=112.63
+  Zlayer= 41 z= 6713.8 x=  162.9 y=   67.5 phi=112.52
+  Zlayer= 42 z= 6795.8 x=  165.3 y=   68.2 phi=112.42
+  Zlayer= 43 z= 6877.8 x=  167.8 y=   68.9 phi=112.32
+  Zlayer= 44 z= 6959.8 x=  170.2 y=   69.6 phi=112.23
+  Zlayer= 45 z= 7041.8 x=  172.7 y=   70.2 phi=112.13
+  Zlayer= 46 z= 7123.8 x=  175.2 y=   70.9 phi=112.04
+  Zlayer= 47 z= 7205.8 x=  177.6 y=   71.6 phi=111.95
+  Zlayer= 48 z= 7287.8 x=  180.1 y=   72.3 phi=111.87
+  Zlayer= 49 z= 7369.8 x=  182.5 y=   72.9 phi=111.78
+  Zlayer= 50 z= 7451.8 x=  185.0 y=   73.6 phi=111.70
+  Zlayer= 51 z= 7533.8 x=  187.5 y=   74.3 phi=111.62
+  Zlayer= 52 z= 7615.8 x=  189.9 y=   75.0 phi=111.54
+  Zlayer= 53 z= 7697.8 x=  192.4 y=   75.7 phi=111.47
+  Zlayer= 54 z= 7779.8 x=  194.8 y=   76.3 phi=111.39
+  Zlayer= 55 z= 7861.8 x=  197.3 y=   77.0 phi=111.32
+  Zlayer= 56 z= 7943.8 x=  199.8 y=   77.7 phi=111.25
+  Zlayer= 57 z= 8025.8 x=  202.2 y=   78.4 phi=111.18
+  Zlayer= 58 z= 8107.8 x=  204.7 y=   79.0 phi=111.11
+  Zlayer= 59 z= 8189.8 x=  207.1 y=   79.7 phi=111.05
+  Zlayer= 60 z= 8271.8 x=  209.6 y=   80.4 phi=110.98

@@ -13,7 +13,7 @@ ROOT.gROOT.SetBatch(True)
 PDGData = ROOT.TDatabasePDG.Instance()
 
 parser = ArgumentParser()
-parser.add_argument('--path', dest='path', default='/eos/user/j/jaweiss/MuonBack/TRY5PlSc')
+parser.add_argument('--path', dest='path', default='/eos/user/j/jaweiss/MuonBack/TRY5PlSc') #/eos/user/j/jaweiss/MuonBack/TRY5LiSc/12597273
 parser.add_argument('--tag', dest='tag', default='')
 parser.add_argument('--raw', dest='raw', action='store_true', default=False, help='If set, will fill digi hit histograms with 1 instead of weight')
 parser.add_argument('--test', dest='test', action='store_true', default=False, help='If set, will only process the first some events for testing purposes')
