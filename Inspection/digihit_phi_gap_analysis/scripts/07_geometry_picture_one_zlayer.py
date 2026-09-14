@@ -1,10 +1,21 @@
+"""
+Voraussetzung: XQuartz installiert & läuft (macOS).
+
+1. Mac-Terminal: `ssh -Y jaweiss@lxplus.cern.ch`
+2. Prüfen: `echo $DISPLAY` (muss einen Wert zeigen, z.B. `localhost:47.0`)
+3. `source /cvmfs/ship.cern.ch/26.04/setUp.sh`
+4. `alienv enter -w /afs/cern.ch/work/j/jaweiss/private/sw FairShip/latest`
+5. Falls `echo $DISPLAY` jetzt leer ist: `export DISPLAY=<Wert aus Schritt 2>`
+
+"""
+
 import ROOT
 from argparse import ArgumentParser
 
 parser = ArgumentParser()
 parser.add_argument("--long", type=float, default=20, help="longitude for view rotation")
 parser.add_argument("--lat", type=float, default=20, help="latitude for view rotation")
-parser.add_argument("--block", type=int, default=2, help="blockNr to select (1 = short tapered block, 2 = long block)")
+parser.add_argument("--block", type=int, default=2, help="blockNr to select (1 = short block, 2 = long block)")
 parser.add_argument("--zlayer", type=int, default=1, help="Zlayer to select (block1 only has Zlayer=1; block2 has 1..60)")
 options = parser.parse_args()
 print("1. ROOT imported", flush=True)

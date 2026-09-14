@@ -1,6 +1,5 @@
 # Warum `{thr}_digihit_topology_phi` bei phi≈90° und phi≈270° leere Bins hat, `vetopoint_topology_phi` aber nicht
 
-**Untersucht am:** 2026-09-14
 **Input-Datei:** `/afs/cern.ch/work/j/jaweiss/private/MuonBack/TRY6LiSc_full_onlySIM.root`
 **Geometrie-Datei:** `/eos/user/j/jaweiss/MuonBack/TRY6LiSc/11921562/job_1026/geo_11921562_1026.root` (Key `FAIRGeom`)
 **Analysierter Code:** `MuonBack/Inspection/inspect_Back.py`, `sw/SOURCES/FairShip/master/0c23afad9c/veto/vetoHit.cxx`, `sw/SOURCES/FairShip/master/0c23afad9c/veto/veto.cxx`

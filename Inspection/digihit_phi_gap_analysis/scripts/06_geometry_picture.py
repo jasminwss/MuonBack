@@ -1,3 +1,14 @@
+"""
+Voraussetzung: XQuartz installiert & läuft (macOS).
+
+1. Mac-Terminal: `ssh -Y jaweiss@lxplus.cern.ch`
+2. Prüfen: `echo $DISPLAY` (muss einen Wert zeigen, z.B. `localhost:47.0`)
+3. `source /cvmfs/ship.cern.ch/26.04/setUp.sh`
+4. `alienv enter -w /afs/cern.ch/work/j/jaweiss/private/sw FairShip/latest`
+5. Falls `echo $DISPLAY` jetzt leer ist: `export DISPLAY=<Wert aus Schritt 2>`
+
+"""
+
 import ROOT
 from argparse import ArgumentParser
 
