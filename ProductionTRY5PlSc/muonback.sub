@@ -5,9 +5,9 @@ notification 			= Always
 
 arguments = "$(inputFile) $(startEvent) $(nEvents) $(Process) $(Cluster)"
 
-output      = /eos/user/j/jaweiss/MuonBack/TRY5LiSc/condorlogs/job_$(Cluster)_$(Process).out
-error       = /eos/user/j/jaweiss/MuonBack/TRY5LiSc/condorlogs/job_$(Cluster)_$(Process).err
-log         = /eos/user/j/jaweiss/MuonBack/TRY5LiSc/condorlogs/job_$(Cluster).log
+output      = logs/job_$(Cluster)_$(Process).out
+error       = logs/job_$(Cluster)_$(Process).err
+log         = logs/job_$(Cluster).log
 
 request_CPUs   = 1
 request_memory = 4 GB

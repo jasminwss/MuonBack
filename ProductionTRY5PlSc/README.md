@@ -10,9 +10,15 @@ built for that; EOS is.
 ## Done
 
 In `muonback.sub`:
-- `output` / `error` / `log` moved from a relative (AFS) path to
-  `/eos/user/j/jaweiss/MuonBack/TRY5LiSc/condorlogs/` — was 8256 jobs writing
-  their own `.out`/`.err` files plus one shared `.log` file all to AFS at once.
+- `output` / `error` / `log` moved back to AFS (`logs/...`, relative to this
+  dir). Briefly tried EOS (`/eos/user/j/jaweiss/MuonBack/TRY5LiSc/condorlogs/`)
+  to get everything off AFS, but HTCondor's own file-transfer-back for these
+  three (CEDAR write-to-temp-then-rename) doesn't work reliably on EOS —
+  every job held with "Transfer output files failure ... errno 2 No such
+  file or directory" even though the target dir existed and was writable.
+  Not the AFS-overload problem (that was thousands of concurrent jobs each
+  reading FairShip from AFS, fixed below) — these are a handful of small
+  files at a `max_materialize`-throttled rate, AFS handles that fine.
 - Added `max_materialize = 200` — caps how many jobs run at the same time,
   instead of all 8256 starting (and hitting AFS) simultaneously.
 - Merged the two duplicate `requirements` lines (the second was silently
