@@ -28,4 +28,4 @@ requirements = (OpSysAndVer =?= "AlmaLinux9") && (Machine =!= LastRemoteHost)
 # now fairship is syned to eos 
 max_materialize = 200
 
-queue inputFile,startEvent,nEvents from sim_jobs_short.txt
+queue inputFile,startEvent,nEvents from sim_jobs.txt

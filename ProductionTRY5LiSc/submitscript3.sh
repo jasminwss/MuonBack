@@ -19,9 +19,15 @@ RUN_ID="${ClusterId}_${ProcId}"
 OUTPUT_BASE=/eos/user/j/jaweiss/MuonBack/TRY5LiSc
 OUTPUT_DIR=${OUTPUT_BASE}/${ClusterId}/job_${ProcId}   # ← one folder per job
 # mkdir -p can race on EOS when all jobs of a cluster create the shared
-# ClusterId parent dir at once ("File exists" despite -p); if the dir is
-# there afterwards, that's fine, so don't let set -e kill the job over it.
-mkdir -p "$OUTPUT_DIR" || [ -d "$OUTPUT_DIR" ] || { echo "ERROR: could not create $OUTPUT_DIR"; exit 1; }
+# ClusterId parent dir at once ("File exists" despite -p), and EOS metadata
+# can lag a beat so the immediate -d check right after can still miss it;
+# retry a few times before giving up.
+for attempt in 1 2 3 4 5; do
+    mkdir -p "$OUTPUT_DIR" && break
+    [ -d "$OUTPUT_DIR" ] && break
+    sleep 2
+done
+[ -d "$OUTPUT_DIR" ] || { echo "ERROR: could not create $OUTPUT_DIR"; exit 1; }
 
 [ -f "$inputFile" ] || { echo "ERROR: input file missing: $inputFile"; exit 1; }
 

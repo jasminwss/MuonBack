@@ -20,7 +20,8 @@ parser.add_argument("--zlayer", type=int, default=1, help="Zlayer to select (blo
 options = parser.parse_args()
 print("1. ROOT imported", flush=True)
 
-f = ROOT.TFile.Open("/eos/user/j/jaweiss/MuonBack/TRY6LiSc/11921562/job_1026/geo_11921562_1026.root")
+#f = ROOT.TFile.Open("/eos/user/j/jaweiss/MuonBack/TRY6LiSc/11921562/job_1026/geo_11921562_1026.root")
+f = ROOT.TFile.Open("/eos/experiment/ship/simulation/cuda_muons/try_2025/processed_muons/geo_cuda_test.root")
 print("2. file opened:", f, flush=True)
 
 geo = f.Get("FAIRGeom")
@@ -73,7 +74,7 @@ ROOT.gPad.Update()
 
 out = (
     "/afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/digihit_phi_gap_analysis/results/"
-    f"lisc{long}_{lat}_block{options.block}_z{options.zlayer}.png"
+    f"CUDA_lisc{long}_{lat}_block{options.block}_z{options.zlayer}.png"
 )
 c.SaveAs(out)
 print(f"12. saved {out} - done", flush=True)

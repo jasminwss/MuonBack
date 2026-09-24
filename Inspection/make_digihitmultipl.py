@@ -1,16 +1,19 @@
+
 import ROOT, os
 
 ROOT.gROOT.SetBatch(True)
 ROOT.gStyle.SetOptStat(0)
 
 pathTRY5 = "/afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/TRY5PlSc_full_onlySIM.root"
+pathTRY5LiSc = "/afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/TRY5LiSc.root"
 pathTRY6 = "/afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/TRY6LiSc_full_onlySIM.root"
 
-outdirs = sorted({os.path.dirname(pathTRY5), os.path.dirname(pathTRY6)})
+outdirs = sorted({os.path.dirname(pathTRY5), os.path.dirname(pathTRY5LiSc), os.path.dirname(pathTRY6)})
 
-# left panel = TRY5, right panel = TRY6
+# panel order: TRY5, TRY5LiSc, TRY6
 panels = [
     ("TRY5 (PlSc)", ROOT.TFile.Open(pathTRY5)),
+    ("TRY5 (LiSc)", ROOT.TFile.Open(pathTRY5LiSc)),
     ("TRY6 (LiSc)", ROOT.TFile.Open(pathTRY6)),
 ]
 
@@ -73,8 +76,8 @@ def draw_overlay(pad, f, label):
 
     keep_alive.append((clones, leg, latex))
 
-canvas = ROOT.TCanvas("c_digihit_multiplicity_compare", "digihit multiplicity: TRY5 vs TRY6", 1800, 750)
-canvas.Divide(2, 1)
+canvas = ROOT.TCanvas("c_digihit_multiplicity_compare", "digihit multiplicity: TRY5 vs TRY5LiSc vs TRY6", 2700, 750)
+canvas.Divide(3, 1)
 
 for i, (label, f) in enumerate(panels, start=1):
     draw_overlay(canvas.cd(i), f, label)

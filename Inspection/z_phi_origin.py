@@ -16,6 +16,8 @@ parser.add_argument('--raw', dest='raw', action='store_true', default=False, hel
 options = parser.parse_args()
 tag = options.tag if options.tag else "phi-z-plots"
 path = '/eos/user/j/jaweiss/MuonBack/TRY6LiSc/11921562/' if options.version == 'TRY6LiSc' else '/eos/user/j/jaweiss/MuonBack/TRY5PlSc/'
+if options.version == "TRY5LiSc":
+    path = "/eos/user/j/jaweiss/MuonBack/TRY5LiSc/12636148/"
 print(f"Using path: {path}")
 raw = options.raw
 
