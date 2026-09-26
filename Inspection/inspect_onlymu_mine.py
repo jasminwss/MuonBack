@@ -6,6 +6,7 @@ from ShipGeoConfig import load_from_root_file
 import rootUtils as ut
 from array import array
 import numpy as np
+from contextlib import redirect_stdout
 
 ROOT.gROOT.SetBatch(True)
 #ROOT.gErrorIgnoreLevel = ROOT.kFatal
@@ -22,6 +23,9 @@ print("using path:", options.path)
 
 h={}
 #histogram for E_loss
+threshold_list=[0,10,20,30,45,50,60,90]
+for threshold in threshold_list:
+    ut.bookHist(h, f'{threshold}_digihit_multiplicity'				,f'SBT (Digitised hits @ {threshold}MeV threshold ) ; Number of triggered SBT cells in an event 	;										',2000,-0.5,2000.5)
 
 
 def print_result(tag):
@@ -29,7 +33,7 @@ def print_result(tag):
 	global h,Event_weight,SBT_Event_weight,digihitrate_by_origin,sst_hitrate
 	ut.writeHists(h, directory +tag+'.root')
 
-	with open(directory +tag+'_readme.txt', 'w') as readme: 
+	with open(directory +tag+'_readme.txt', 'w') as readme, redirect_stdout(readme):
 				
 		print("\n\n\n")
 		
@@ -120,25 +124,48 @@ for jobDir in sorted(os.listdir(options.path)):
 
 
 
+            # only vetoPoints of muon tracks in SBT cells enter the digitisation
             muon_hit_SBT = False
             max_Eloss = 0
             for key, veto_MCPoint in enumerate(tree_sim.vetoPoint):
                 pdgCode = tree_sim.MCTrack[veto_MCPoint.GetTrackID()].GetPdgCode()
-                if abs(pdgCode) == 13:
-                    muon_hit_SBT = True
-                    Eloss = veto_MCPoint.GetEnergyLoss()
-                    if Eloss > max_Eloss:
-                        max_Eloss = Eloss
+                detID   = veto_MCPoint.GetDetectorID()
+                if abs(pdgCode) != 13 or not (1000 < detID < 999999):
+                    continue
+                muon_hit_SBT = True
+                Eloss = veto_MCPoint.GetEnergyLoss()
+                if Eloss > max_Eloss:
+                    max_Eloss = Eloss
+                if detID not in ElossPerDetId:
+                    ElossPerDetId[detID]=0
+                ElossPerDetId[detID] += Eloss
 
             if muon_hit_SBT:
                 muons_in_SBT_raw += 1
                 muons_in_SBT += weight
-            
+
             if muon_hit_SBT and max_Eloss>0:
                 muons_in_SBT_withEloss_raw += 1
                 muons_in_SBT_withEloss += weight
 
+            #Explicit  Digitisation 
+            digiSBT = {}
+            digihit_multiplicity = {threshold: 0 for threshold in threshold_list} #nSBT cells fired per event
 
+            for index,detID in enumerate(ElossPerDetId):
+                aHit = ROOT.vetoHit(detID,ElossPerDetId[detID]) # digitized hit object — combining the cell ID with the total Eloss into a single reconstructed hit
+                digiSBT[index] = aHit # storing all digi hits for the event
+
+                for threshold in threshold_list:
+                    if ElossPerDetId[detID]<0.001*threshold:
+                        continue
+
+                    digihit_multiplicity[threshold] += 1
+        
+            for threshold in threshold_list:
+
+                h[f'{threshold}_digihit_multiplicity'].Fill(digihit_multiplicity[threshold],weight) #how many digihits per event
+            
                 
         f_sim.Close()
         if fgeo:

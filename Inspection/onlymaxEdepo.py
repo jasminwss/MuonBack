@@ -12,9 +12,11 @@ parser.add_argument('--version', dest='version', default= 'TRY6LiSc')
 parser.add_argument('--tag', dest='tag', default='onlymaxEdepo')
 options = parser.parse_args()
 tag = options.tag if options.tag else "onlymaxEdepo"
-path = '/eos/user/j/jaweiss/MuonBack/TRY6LiSc/11921562/' if options.version == 'TRY6LiSc' 
-path = pathTRY5LiSc ="/afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/TRY5LiSc.root" if  options.version == 'TRY5LiSc' 
-if path is None:
+if options.version == 'TRY6LiSc':
+    path = '/eos/user/j/jaweiss/MuonBack/TRY6LiSc/11921562/'
+elif options.version == 'TRY5LiSc':
+    path = '/eos/user/j/jaweiss/MuonBack/TRY5LiSc/12636148/'
+else:
     path = '/eos/user/j/jaweiss/MuonBack/TRY5PlSc/'
 print(f"Using path: {path}")
 

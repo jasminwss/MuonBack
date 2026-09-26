@@ -1,4 +1,4 @@
-executable          	= condorEdepo.sh
+executable          	= /afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/condorEdepo.sh
 should_transfer_files 	= YES
 arguments             	= $(ClusterId) $(ProcId)
 notify_user				= jasminvweiss@gmail.com

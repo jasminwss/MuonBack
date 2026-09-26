@@ -1,6 +1,6 @@
 # to review: z=0 is at the Target?
 
-import ROOT, os
+import ROOT, os, ctypes
 from argparse import ArgumentParser
 from ShipGeoConfig import load_from_root_file
 import rootUtils as ut
@@ -26,12 +26,76 @@ threshold_list = [0, 90]
 MUON_PDGS = (13, -13)
 STEP_LIMIT = 5000  # safety cap on navigator boundary crossings per muon, protects
                     # against an ill-formed geometry/direction causing an infinite loop
+SBT_NODE = 'DecayVolume_1/T2_1'  # SBT envelope (walls, ribs, LiSc cells), used as ray-trace bounding box
+
+# Straight-line ray trace in C++ (a PyROOT loop costs ~6 python->C++ calls per step).
+# Only the part of the ray inside the SBT bounding box is stepped; rays that miss the
+# box are skipped entirely, so the navigator no longer walks the whole world
+# (SplitCal, muon shield, ...) for every muon.
+ROOT.gInterpreter.Declare('''
+#include "TGeoManager.h"
+#include "TGeoNavigator.h"
+#include "TGeoBBox.h"
+#include "TGeoMatrix.h"
+#include <cstring>
+#include <algorithm>
+namespace onlymu {
+double bbLo[3], bbHi[3];
+
+bool InitSBTBox(const char *path) {
+    if (!gGeoManager->cd(path)) return false;
+    const TGeoHMatrix *m = gGeoManager->GetCurrentMatrix();
+    const TGeoBBox *box = (const TGeoBBox *)gGeoManager->GetCurrentVolume()->GetShape();
+    const double *o = box->GetOrigin();
+    const double d[3] = {box->GetDX(), box->GetDY(), box->GetDZ()};
+    for (int k = 0; k < 3; ++k) { bbLo[k] = 1e30; bbHi[k] = -1e30; }
+    for (int c = 0; c < 8; ++c) {
+        double loc[3], mas[3];
+        for (int k = 0; k < 3; ++k) loc[k] = o[k] + ((c >> k) & 1 ? d[k] : -d[k]);
+        m->LocalToMaster(loc, mas);
+        for (int k = 0; k < 3; ++k) { bbLo[k] = std::min(bbLo[k], mas[k]); bbHi[k] = std::max(bbHi[k], mas[k]); }
+    }
+    return true;
+}
+
+// returns false if the ray misses the SBT box (paths stay 0)
+bool TraceSBT(double x0, double y0, double z0, double ux, double uy, double uz,
+              const char *scintMat, int stepLimit, double &pathLiSc, double &pathAl) {
+    pathLiSc = 0.; pathAl = 0.;
+    const double o[3] = {x0, y0, z0}, u[3] = {ux, uy, uz};
+    double tmin = 0., tmax = 1e30;
+    for (int k = 0; k < 3; ++k) {
+        if (std::abs(u[k]) < 1e-12) {
+            if (o[k] < bbLo[k] || o[k] > bbHi[k]) return false;
+            continue;
+        }
+        double t1 = (bbLo[k] - o[k]) / u[k], t2 = (bbHi[k] - o[k]) / u[k];
+        if (t1 > t2) std::swap(t1, t2);
+        tmin = std::max(tmin, t1); tmax = std::min(tmax, t2);
+        if (tmin > tmax) return false;
+    }
+    TGeoNavigator *nav = gGeoManager->GetCurrentNavigator();
+    nav->InitTrack(x0 + ux * tmin, y0 + uy * tmin, z0 + uz * tmin, ux, uy, uz);
+    double travelled = tmin;
+    for (int n = 0; n < stepLimit && !nav->IsOutside() && travelled < tmax; ++n) {
+        TGeoVolume *vol = nav->GetCurrentVolume();
+        const char *mat = vol ? vol->GetMaterial()->GetName() : "";
+        nav->FindNextBoundaryAndStep();
+        const double step = nav->GetStep();
+        travelled += step;
+        if (!std::strcmp(mat, scintMat))        pathLiSc += step;
+        else if (!std::strcmp(mat, "Aluminum"))      pathAl   += step;
+    }
+    return true;
+}
+}
+''')
 
 # setup histograms
 h = {}
 ut.bookHist(h, 'vetopoint_pdg', 'SBT (vetoPoint info) ; pdg ; ', 20, -0.5, 20.5)
 ut.bookHist(h, 'muon_scint_pathlength_cm',
-            'Muon path length through SBT LiquidScintillator (straight-line geometry ray-trace) ; path length (cm) ; ',
+            'Muon path length through SBT scintillator (straight-line geometry ray-trace) ; path length (cm) ; ',
             500, 0., 6000.)
 ut.bookHist(h, 'muon_alu_pathlength_cm',
             'Muon path length through SBT Aluminum walls/ribs (straight-line geometry ray-trace) ; path length (cm) ; ',
@@ -43,7 +107,9 @@ for threshold in threshold_list:
 
 # global variables
 sGeo = None
-nav = None
+pathLiSc_ref = ctypes.c_double(0.)  # output args of onlymu::TraceSBT
+pathAl_ref = ctypes.c_double(0.)
+scint_mat = None
 scint_density = None
 alu_density = None
 sbt_pdg_list = {}
@@ -86,10 +152,21 @@ for jobDir in sorted(os.listdir(options.path)):
             print('ShipGeo loaded')
             sGeo = fgeo["FAIRGeom"]
             ROOT.gGeoManager = sGeo
-            nav = ROOT.gGeoManager.GetCurrentNavigator()
-            scint_density = sGeo.GetMaterial("LiquidScintillator").GetDensity()
+            sbt_path = f'/{sGeo.GetTopNode().GetName()}/{SBT_NODE}'
+            if not ROOT.onlymu.InitSBTBox(sbt_path):
+                raise RuntimeError(f'SBT node {sbt_path} not found in geometry')
+            print(f'SBT bounding box: x [{ROOT.onlymu.bbLo[0]:.1f}, {ROOT.onlymu.bbHi[0]:.1f}]  '
+                  f'y [{ROOT.onlymu.bbLo[1]:.1f}, {ROOT.onlymu.bbHi[1]:.1f}]  '
+                  f'z [{ROOT.onlymu.bbLo[2]:.1f}, {ROOT.onlymu.bbHi[2]:.1f}] cm')
+            # SBT cell material, read from an actual cell: LiSc geometries use
+            # "LiquidScintillator", PlSc ones "Scintillator"
+            cells = sGeo.FindVolumeFast('VetoLiSc')
+            if not cells or cells.GetNdaughters() == 0:
+                raise RuntimeError('VetoLiSc volume (SBT cells) not found in geometry')
+            scint_mat = cells.GetNode(0).GetVolume().GetMaterial().GetName()
+            scint_density = sGeo.GetMaterial(scint_mat).GetDensity()
             alu_density = sGeo.GetMaterial("Aluminum").GetDensity()
-            print(f"LiquidScintillator density: {scint_density} g/cm3, Aluminum density: {alu_density} g/cm3")
+            print(f"{scint_mat} density: {scint_density} g/cm3, Aluminum density: {alu_density} g/cm3")
 
         f_sim = ROOT.TFile.Open(sim_files[0])
         tree_sim = f_sim.Get("cbmsim")
@@ -144,21 +221,9 @@ for jobDir in sorted(os.listdir(options.path)):
             p = (px * px + py * py + pz * pz) ** 0.5
             if p == 0:
                 continue
-            x0, y0, z0 = muon_track.GetStartX(), muon_track.GetStartY(), muon_track.GetStartZ()
-            nav.InitTrack(x0, y0, z0, px / p, py / p, pz / p)
-
-            pathLiSc, pathAl = 0.0, 0.0
-            nsteps = 0
-            while not nav.IsOutside() and nsteps < STEP_LIMIT:
-                vol = nav.GetCurrentVolume()
-                mat = vol.GetMaterial().GetName() if vol else None
-                nav.FindNextBoundaryAndStep()
-                step = nav.GetStep()
-                if mat == "LiquidScintillator":
-                    pathLiSc += step
-                elif mat == "Aluminum":
-                    pathAl += step
-                nsteps += 1
+            ROOT.onlymu.TraceSBT(muon_track.GetStartX(), muon_track.GetStartY(), muon_track.GetStartZ(),
+                                 px / p, py / p, pz / p, scint_mat, STEP_LIMIT, pathLiSc_ref, pathAl_ref)
+            pathLiSc, pathAl = pathLiSc_ref.value, pathAl_ref.value
 
             h['muon_scint_pathlength_cm'].Fill(pathLiSc, weight)
             h['muon_alu_pathlength_cm'].Fill(pathAl, weight)
@@ -213,7 +278,7 @@ for threshold in threshold_list:
                  f"{digihit_weight_sum[threshold]:.5e}  ({frac:.3f} %)")
 lines.append("")
 frac_geo = 100 * n_with_LiSc_path_weight / total_muons_weight if total_muons_weight else 0.0
-lines.append(f"Muons with a geometric path through LiquidScintillator:  {n_with_LiSc_path_weight:.5e}  ({frac_geo:.3f} %)")
+lines.append(f"Muons with a geometric path through {scint_mat}:  {n_with_LiSc_path_weight:.5e}  ({frac_geo:.3f} %)")
 lines.append(f"  mean scintillator path length (muons with path>0):  {mean_LiSc:.2f} cm  "
              f"({mean_LiSc * scint_density:.2f} g/cm2, rho={scint_density:.3f} g/cm3)")
 lines.append(f"  mean aluminum path length     (same muons):         {mean_Al:.2f} cm  "

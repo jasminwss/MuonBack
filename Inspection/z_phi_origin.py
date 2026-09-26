@@ -289,6 +289,8 @@ if options.test:
     tag = f"{tag}_test"
 if options.version == "TRY6LiSc":
     out_file = ROOT.TFile(f"/eos/user/j/jaweiss/MuonBack/TRY6LiSc/z_phi_origin/{tag}.root","RECREATE")
+elif options.version == "TRY5LiSc":
+    out_file = ROOT.TFile(f"/eos/user/j/jaweiss/MuonBack/TRY5LiSc/z_phi_origin/{tag}.root","RECREATE")
 else: 
     out_file = ROOT.TFile(f"/eos/user/j/jaweiss/MuonBack/TRY5PlSc/z_phi_origin/{tag}.root","RECREATE")
 out_file.cd()
