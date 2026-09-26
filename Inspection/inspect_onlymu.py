@@ -1,11 +1,10 @@
-# to review: z=0 is at the Target?
-
 import ROOT, os, ctypes
 from argparse import ArgumentParser
 from ShipGeoConfig import load_from_root_file
 import rootUtils as ut
 
 ROOT.gROOT.SetBatch(True)
+ROOT.gErrorIgnoreLevel = ROOT.kWarning  # hide ROOT Info spam (e.g. TCling::LoadPCM), keep warnings/errors
 PDGData = ROOT.TDatabasePDG.Instance()
 
 parser = ArgumentParser()
@@ -20,7 +19,6 @@ test = options.test
 print("using path:", options.path)
 
 # 0 = "any digihit" (for comparison with the geometric numbers below), 90 = Heiko's
-# reference threshold from the slack thread
 threshold_list = [0, 90]
 
 MUON_PDGS = (13, -13)
@@ -104,6 +102,12 @@ for threshold in threshold_list:
     ut.bookHist(h, f'{threshold}_digihit_multiplicity',
                 f'SBT digitised hits @ {threshold}MeV threshold ; Number of triggered SBT cells in an event ; ',
                 2000, -0.5, 1999.5)
+    ut.bookHist(h, f'{threshold}_muon_cell_multiplicity',
+                f'SBT cells hit by the muon itself (Eloss>0, per-cell muon Eloss >= {threshold}MeV), muons with >=1 such cell ; Number of cells ; ',
+                200, -0.5, 199.5)
+ut.bookHist(h, 'muon_Eloss_SBT_MeV',
+            'Energy deposited by the muon itself in SBT cells (muons with Eloss>0) ; muon Eloss (MeV) ; ',
+            1000, 0., 10000.)
 
 # global variables
 sGeo = None
@@ -123,6 +127,10 @@ job_nmbr = 0
 # reported means aren't affected by histogram bin width, see the plan's note on this)
 total_muons_weight = 0.0
 digihit_weight_sum = {threshold: 0.0 for threshold in threshold_list}
+# muon-only deposits (vetoPoints with pdg +-13), per threshold on the per-cell muon Eloss
+muon_hit_weight_sum = {threshold: 0.0 for threshold in threshold_list}  # sum of weight, muons with >=1 cell
+muon_cells_weighted_sum = {threshold: 0.0 for threshold in threshold_list}  # sum of weight * n_cells, same subset
+muon_Eloss_weighted_sum = 0.0  # sum of weight * total muon Eloss (MeV), muons with Eloss>0
 n_with_LiSc_path_weight = 0.0        # sum of weight, muons with a geometric path through LiSc
 sum_LiSc_path_weighted_length = 0.0  # sum of weight * pathLiSc, same subset
 sum_Al_path_weighted_length = 0.0    # sum of weight * pathAl, same subset (conditioned on LiSc path>0)
@@ -194,11 +202,14 @@ for jobDir in sorted(os.listdir(options.path)):
             #    with the geometric numbers -- see slack thread: >99.8% of these hits
             #    are EM debris, not the muon itself) --
             ElossPerDetId = {}
+            muonElossPerDetId = {}  # only the muon's own deposits
             for veto_MCPoint in tree_sim.vetoPoint:
                 pdgCode = tree_sim.MCTrack[veto_MCPoint.GetTrackID()].GetPdgCode()
                 detID = veto_MCPoint.GetDetectorID()
                 Eloss = veto_MCPoint.GetEnergyLoss()
                 ElossPerDetId[detID] = ElossPerDetId.get(detID, 0.0) + Eloss
+                if pdgCode in MUON_PDGS:
+                    muonElossPerDetId[detID] = muonElossPerDetId.get(detID, 0.0) + Eloss 
 
                 try:    particle_name = PDGData.GetParticle(pdgCode).GetName()
                 except: particle_name = 'others'
@@ -213,6 +224,18 @@ for jobDir in sorted(os.listdir(options.path)):
                 h[f'{threshold}_digihit_multiplicity'].Fill(multiplicity, weight)
                 if multiplicity >= 1:
                     digihit_weight_sum[threshold] += weight
+
+                # Eloss>0 also for threshold 0, so a muon only counts if it really deposited energy
+                n_muon_cells = sum(1 for e in muonElossPerDetId.values() if e > 0 and e >= 0.001 * threshold)
+                if n_muon_cells >= 1:
+                    h[f'{threshold}_muon_cell_multiplicity'].Fill(n_muon_cells, weight)
+                    muon_hit_weight_sum[threshold] += weight
+                    muon_cells_weighted_sum[threshold] += weight * n_muon_cells
+
+            muon_Eloss_MeV = 1000 * sum(muonElossPerDetId.values()) # gesamte E des Muons deponiert im SBT
+            if muon_Eloss_MeV > 0: #wenn das muon überhaupt im sbt energy deponiert
+                h['muon_Eloss_SBT_MeV'].Fill(muon_Eloss_MeV, weight)
+                muon_Eloss_weighted_sum += weight * muon_Eloss_MeV
 
             # -- geometric path length through SBT sensitive/frame material --
             # straight-line assumption, consistent with how the rest of the thread
@@ -277,7 +300,17 @@ for threshold in threshold_list:
     lines.append(f"Muons with >=1 digihit in SBT (any particle, {threshold:3}MeV): "
                  f"{digihit_weight_sum[threshold]:.5e}  ({frac:.3f} %)")
 lines.append("")
-frac_geo = 100 * n_with_LiSc_path_weight / total_muons_weight if total_muons_weight else 0.0
+for threshold in threshold_list:
+    n_mu = muon_hit_weight_sum[threshold]
+    frac = 100 * n_mu / total_muons_weight if total_muons_weight else 0.0
+    mean_cells = muon_cells_weighted_sum[threshold] / n_mu if n_mu else 0.0
+    lines.append(f"Muons depositing energy themselves in SBT (cell Eloss >= {threshold:3}MeV): "
+                 f"{n_mu:.5e}  ({frac:.3f} %),  mean cells hit: {mean_cells:.2f}")
+n_mu0 = muon_hit_weight_sum[0]
+mean_muon_Eloss = muon_Eloss_weighted_sum / n_mu0 if n_mu0 else 0.0
+lines.append(f"  mean energy deposited by the muon in SBT (muons with Eloss>0): {mean_muon_Eloss:.1f} MeV")
+lines.append("")
+frac_geo =100 * n_with_LiSc_path_weight / total_muons_weight if total_muons_weight else 0.0
 lines.append(f"Muons with a geometric path through {scint_mat}:  {n_with_LiSc_path_weight:.5e}  ({frac_geo:.3f} %)")
 lines.append(f"  mean scintillator path length (muons with path>0):  {mean_LiSc:.2f} cm  "
              f"({mean_LiSc * scint_density:.2f} g/cm2, rho={scint_density:.3f} g/cm3)")

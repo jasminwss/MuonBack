@@ -15,7 +15,7 @@ XMAX_GEV = 1
 # ---------------------------------------------------------------------------
 
 pathTRY5 = "/afs/cern.ch/work/j/jaweiss/private/MuonBack/TRY5PlSc_onlymaxEdepo.root"
-pathTRY5LiSc = "/afs/cern.ch/work/j/jaweisson/TRY5LiSc.root"
+pathTRY5LiSc = "/afs/cern.ch/work/j/jaweiss/TRY5LiSc.root"
 pathTRY6 = "/afs/cern.ch/work/j/jaweiss/private/MuonBack/TRY6LiSc_onlymaxEdepo.root"
 
 outdirs = sorted({os.path.dirname(pathTRY5), os.path.dirname(pathTRY5LiSc), os.path.dirname(pathTRY6)})
