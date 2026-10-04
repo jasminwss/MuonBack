@@ -13,7 +13,7 @@ ROOT.gROOT.SetBatch(True)
 PDGData = ROOT.TDatabasePDG.Instance()
 
 parser = ArgumentParser()
-parser.add_argument('--path', dest='path', default='/eos/user/j/jaweiss/MuonBack/TRY5PlSc')
+parser.add_argument('--path', dest='path', default='/eos/user/j/jaweiss/MuonBack/TRY5LiSc/12636148')# '/eos/user/j/jaweiss/MuonBack/TRY5PlSc')
 parser.add_argument('--tag', dest='tag', default='')
 parser.add_argument('--test', dest='test', action='store_true', default=False, help='If set, will only process the first some events for testing purposes')
 options = parser.parse_args()

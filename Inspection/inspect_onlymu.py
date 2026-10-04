@@ -8,13 +8,15 @@ ROOT.gErrorIgnoreLevel = ROOT.kWarning  # hide ROOT Info spam (e.g. TCling::Load
 PDGData = ROOT.TDatabasePDG.Instance()
 
 parser = ArgumentParser()
-parser.add_argument('--path', dest='path', default='/eos/user/j/jaweiss/MuonBack/TRY5PlSc')
+parser.add_argument('--path', dest='path', default='/eos/user/j/jaweiss/MuonBack/TRY5LiSc/12636148')# '/eos/user/j/jaweiss/MuonBack/TRY5PlSc')
 parser.add_argument('--tag', dest='tag', default='')
 parser.add_argument('--raw', dest='raw', action='store_true', default=False, help='If set, will fill histograms with weight=1 instead of the muon flux weight')
 parser.add_argument('--test', dest='test', action='store_true', default=False, help='If set, will only process the first 50 jobs for testing purposes')
+parser.add_argument('--p_smaller2', dest='p_smaller2', action='store_true', default=False, help='If set, will only process muons with momentum smaller than 2 GeV/c')
 options = parser.parse_args()
 raw = options.raw
 test = options.test
+p_smaller2 = options.p_smaller2
 
 print("using path:", options.path)
 
@@ -118,7 +120,6 @@ scint_density = None
 alu_density = None
 sbt_pdg_list = {}
 sbt_pdg_index = 0
-Event_weight = {}          # global_event_id -> muon flux weight
 global_event_id = -1       # so it starts at 0
 exception_issues = {}
 job_nmbr = 0
@@ -136,7 +137,7 @@ sum_LiSc_path_weighted_length = 0.0  # sum of weight * pathLiSc, same subset
 sum_Al_path_weighted_length = 0.0    # sum of weight * pathAl, same subset (conditioned on LiSc path>0)
 
 for jobDir in sorted(os.listdir(options.path)):
-    if test and job_nmbr >= 10:  # Limit to first jobs for testing
+    if test and job_nmbr >= 50:  # Limit to first jobs for testing
         break
     job_nmbr += 1
     jobPath = f'{options.path}/{jobDir}'
@@ -193,9 +194,12 @@ for jobDir in sorted(os.listdir(options.path)):
                     break
             if muon_track is None:
                 continue  # no muon in this event, nothing to measure
-
-            Event_weight[global_event_id] = muon_track.GetWeight()
-            weight = 1.0 if raw else Event_weight[global_event_id]
+            #if p_smaller2 and muon_track.GetP() >= 2:
+             #   continue  # skips muons with momentum >= 2 GeV/c
+            #if p_smaller2 and muon_track.GetP() < 2:
+             #   print(f"Event {global_event_id}: Muon momentum = {muon_track.GetP():.3f} GeV/c, accepted for p_smaller2 option.")
+            
+            weight = 1.0 if raw else muon_track.GetWeight()
             total_muons_weight += weight
 
             # -- digihit multiplicity bookkeeping (any-particle deposit, for comparison
@@ -208,6 +212,9 @@ for jobDir in sorted(os.listdir(options.path)):
                 detID = veto_MCPoint.GetDetectorID()
                 Eloss = veto_MCPoint.GetEnergyLoss()
                 ElossPerDetId[detID] = ElossPerDetId.get(detID, 0.0) + Eloss
+                momentum = ROOT.TMath.Sqrt(veto_MCPoint.GetPx()**2 + veto_MCPoint.GetPy()**2 + veto_MCPoint.GetPz()**2)  # momentum at the SBT hit
+                if p_smaller2 and momentum < 2 and pdgCode in MUON_PDGS:
+                    print(f"Event {global_event_id}: DetID={detID}, PDG={pdgCode}, Momentum={momentum:.3f} GeV/c")
                 if pdgCode in MUON_PDGS:
                     muonElossPerDetId[detID] = muonElossPerDetId.get(detID, 0.0) + Eloss 
 
@@ -280,6 +287,8 @@ if raw:
     tag = tag + "_raw"
 if test:
     tag = tag + "_test"
+if p_smaller2:
+    tag = tag + "_p_smaller2"
 
 out_path = f"/afs/cern.ch/work/j/jaweiss/private/MuonBack/{tag}.root"
 out_file = ROOT.TFile(out_path, "RECREATE")

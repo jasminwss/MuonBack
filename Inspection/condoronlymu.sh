@@ -16,4 +16,4 @@ echo "Using FAIRSHIP=$FAIRSHIP (pixi env)"
 
 #######################################################################################
 
-"${PIXI_RUN[@]}" python /afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/inspect_onlymu.py  --tag onlymu_TRY5PlSc"$@"
+"${PIXI_RUN[@]}" python /afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/inspect_onlymu.py --path '/eos/user/j/jaweiss/MuonBack/TRY5LiSc/12636148' --tag onlymu_TRY5LiSc --p_smaller2"$@"

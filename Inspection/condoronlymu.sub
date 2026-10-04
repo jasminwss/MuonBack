@@ -10,7 +10,7 @@ error       = logs/inspect_onlymu.$(ClusterId).$(ProcId).err
 log         = logs/inspect_onlymu.$(ClusterId).$(ProcId).log
 ##############################################################################################################
 
-request_memory 		= 7000
+request_memory 		= 2000
 #request_disk			= 4 GB
 on_exit_remove   		= (ExitBySignal == False) && (ExitCode == 0)
 max_retries      		= 3
