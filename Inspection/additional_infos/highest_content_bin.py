@@ -1,8 +1,8 @@
 import ROOT
 
 files = [
-    "/afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/TRY6LiSc_full_matchedRecoSim.root",
-    "/afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/TRY5PlSc_full_matchedRecoSim.root",
+    "/afs/cern.ch/work/j/jaweiss/private/MuonBack/results/TRY6LiSc/full/TRY6LiSc_full_matchedRecoSim.root",
+    "/afs/cern.ch/work/j/jaweiss/private/MuonBack/results/TRY5PlSc/full/TRY5PlSc_full_matchedRecoSim.root",
 ]
 hist_name = "0_digihit_topology_phi"
 N = 10

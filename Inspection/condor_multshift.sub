@@ -1,0 +1,21 @@
+executable          	= condor_multshift.sh
+should_transfer_files 	= YES
+arguments             	= $(ClusterId) $(ProcId)
+notify_user				= jasminvweiss@gmail.com
+notification 			= Always
+
+##############################################################################################################
+output      = logs/MultShift.$(ClusterId).$(ProcId).out
+error       = logs/MultShift.$(ClusterId).$(ProcId).err
+log         = logs/MultShift.$(ClusterId).$(ProcId).log
+##############################################################################################################
+
+request_memory 		= 4000
+on_exit_remove   		= (ExitBySignal == False) && (ExitCode == 0)
+max_retries      		= 3
+requirements     		= Machine =!= LastRemoteHost
+
+##############################################################################################################
++JobFlavour="tomorrow"
+##############################################################################################################
+queue

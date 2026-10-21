@@ -1,7 +1,7 @@
 executable = submitscript3.sh 
 
 notify_user				= jasminvweiss@gmail.com
-notification 			= Always
+notification 			= Error
 
 arguments = "$(inputFile) $(startEvent) $(nEvents) $(Process) $(Cluster)"
 
@@ -10,20 +10,19 @@ error       = logs/job_$(Cluster)_$(Process).err
 log         = logs/job_$(Cluster).log
 
 # values as requested by the TRY6LiSc production (cluster 11921562, see its job log)
-request_CPUs   = 2
+request_CPUs   = 1
 request_memory = 6 GB
 request_disk   = 5 GB
 
 +JobFlavour = "tomorrow"
 
 on_exit_remove   		= (ExitBySignal == False) && (ExitCode == 0)
-max_retries      		= 3
-requirements     		= Machine =!= LastRemoteHost 
-
-# Ensure the job has access to your EOS/CVMFS credentials
-requirements = (OpSysAndVer =?= "AlmaLinux9")
+max_retries             = 3
+# Ensure the job has a ccess to your EOS/CVMFS credentials
+requirements = (OpSysAndVer =?= "AlmaLinux9") && (Machine =!= LastRemoteHost)
 +REQUIRED_OS = "AlmaLinux9"
-#use_x509userproxy = True
+
+max_materialize = 200
 
 # TRY6LiSc full production used sim_jobs.txt (8255 jobs); sim_jobs_short.txt for tests
-queue inputFile,startEvent,nEvents from sim_jobs_short.txt
+queue inputFile,startEvent,nEvents from sim_jobs.txt

@@ -8,14 +8,15 @@
 
 #######################################################################################
 
-FAIRSHIP=/afs/cern.ch/work/j/jaweiss/FairShip
+FAIRSHIP=/eos/user/j/jaweiss/FairShip_88d2794
 export QT_QPA_PLATFORM=offscreen   # headless node: Geant4's Qt UI otherwise aborts with qFatal
+export RATTLER_CACHE_DIR=/afs/cern.ch/work/j/jaweiss/.cache/rattler
 PIXI_BIN=/afs/cern.ch/work/j/jaweiss/.pixi/bin/pixi
 PIXI_RUN=("$PIXI_BIN" run --frozen --manifest-path "$FAIRSHIP/pixi.toml")
 echo "Using FAIRSHIP=$FAIRSHIP (pixi env)"
 
 #######################################################################################
 
-"${PIXI_RUN[@]}" python /afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/inspect_Back.py --path /eos/user/j/jaweiss/MuonBack/TRY5LiSc/12636148/ --tag TRY5LiSc
+"${PIXI_RUN[@]}" python /afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/inspect_Back.py --path /eos/user/j/jaweiss/MuonBack/TRY6LiSc_88d2794/12996649/ --tag TRY6LiSc_88d2794_full
 
 #"${PIXI_RUN[@]}" python /afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/inspect_Back_matched.py --tag TRY5PlSc_full_matchedRecoSim --path /eos/user/j/jaweiss/MuonBack/TRY5PlScs

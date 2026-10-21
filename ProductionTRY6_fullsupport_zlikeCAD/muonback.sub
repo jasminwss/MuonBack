@@ -1,0 +1,28 @@
+executable = submitscript.sh
+
+notify_user				= jasminvweiss@gmail.com
+notification 			= Error
+
+arguments = "$(inputFile) $(startEvent) $(nEvents) $(Process) $(Cluster)"
+
+output      = logs/job_$(Cluster)_$(Process).out
+error       = logs/job_$(Cluster)_$(Process).err
+log         = logs/job_$(Cluster).log
+
+# values as requested by the TRY6LiSc production (cluster 11921562, see its job log)
+request_CPUs   = 1
+request_memory = 6 GB
+request_disk   = 5 GB
+
++JobFlavour = "tomorrow"
+
+on_exit_remove   		= (ExitBySignal == False) && (ExitCode == 0)
+max_retries             = 3
+# Ensure the job has a ccess to your EOS/CVMFS credentials
+requirements = (OpSysAndVer =?= "AlmaLinux9") && (Machine =!= LastRemoteHost)
++REQUIRED_OS = "AlmaLinux9"
+
+max_materialize = 300
+
+# TRY6LiSc_SupStrSens (sensitive steel support, FairShip_support): test with sim_jobs_short.txt (5 jobs) first, then sim_jobs.txt (8255 jobs)
+queue inputFile,startEvent,nEvents from sim_jobs_test30.txt

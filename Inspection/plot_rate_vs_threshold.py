@@ -53,8 +53,8 @@ ROOT.gStyle.SetTitleSize(0.046, "xyz")
 ROOT.gStyle.SetLabelColor(INK_SECONDARY, "xyz")
 
 FILES = sys.argv[1:] or [
-    "/afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/TRY5PlSc_full_onlySIM_rate_vs_threshold.root",
-    "/afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/TRY6LiSc_full_onlySIM_rate_vs_threshold.root",
+    "/afs/cern.ch/work/j/jaweiss/private/MuonBack/results/TRY5LiSc/full/TRY5LiSc_rate_vs_threshold.root",
+    "/afs/cern.ch/work/j/jaweiss/private/MuonBack/results/TRY6LiSc_88d2794/full/TRY6LiSc_88d2794_full_rate_vs_threshold.root",
 ]
 
 # graph name -> (legend label, colour, marker style)
@@ -167,7 +167,8 @@ for i, (path, graphs) in enumerate(pads_content):
     canvas.cd()
 
 stem = lambda p: os.path.basename(p).replace("_rate_vs_threshold.root", "")
-out_dir = os.path.dirname(pads_content[0][0]) or "."
+out_dir = (os.path.dirname(pads_content[0][0]) or ".") if len(pads_content) == 1 \
+    else "/afs/cern.ch/work/j/jaweiss/private/MuonBack/results/comparisons"
 out = os.path.join(out_dir, "_vs_".join(stem(p) for p, _ in pads_content) + "_rate_vs_threshold.png")
 canvas.SaveAs(out)
 print(f"wrote {out}")

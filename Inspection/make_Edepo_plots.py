@@ -14,11 +14,12 @@ BIN_WIDTH_MEV = 50
 XMAX_GEV = 1
 # ---------------------------------------------------------------------------
 
-pathTRY5 = "/afs/cern.ch/work/j/jaweiss/private/MuonBack/TRY5PlSc_onlymaxEdepo.root"
-pathTRY5LiSc = "/afs/cern.ch/work/j/jaweiss/TRY5LiSc.root"
-pathTRY6 = "/afs/cern.ch/work/j/jaweiss/private/MuonBack/TRY6LiSc_onlymaxEdepo.root"
+RESULTS = "/afs/cern.ch/work/j/jaweiss/private/MuonBack/results"
+pathTRY5 = f"{RESULTS}/TRY5PlSc/Edepo/TRY5PlSc_onlymaxEdepo.root"
+pathTRY5LiSc = f"{RESULTS}/TRY5LiSc/full/TRY5LiSc.root"
+pathTRY6 = f"{RESULTS}/TRY6LiSc_88d2794/full/TRY6LiSc_88d2794_full.root"
 
-outdirs = sorted({os.path.dirname(pathTRY5), os.path.dirname(pathTRY5LiSc), os.path.dirname(pathTRY6)})
+outdirs = [f"{RESULTS}/comparisons"]
 
 fTRY5 = ROOT.TFile.Open(pathTRY5)
 fTRY5LiSc = ROOT.TFile.Open(pathTRY5LiSc)
@@ -39,7 +40,7 @@ for name in plots_Edepo:
     h5src = fTRY5.Get(name)
     h5lisc_src = fTRY5LiSc.Get(name)
     h6src = fTRY6.Get(name)
-    if not h5src or not h5lisc_src or not h
+    if not h5src or not h5lisc_src or not h6src:
         print(f"Skipping '{name}': missing in TRY5, TRY5LiSc and/or TRY6 file")
         continue
 
@@ -51,13 +52,13 @@ for name in plots_Edepo:
     h6.SetDirectory(0)
 
     # rebin to the requested bin width
-    native_mev = h5.GetXaxis().GetBinWidth(
+    native_mev = h5.GetXaxis().GetBinWidth(1) * 1000.0
     rebin = max(1, int(round(BIN_WIDTH_MEV / native_mev)))
-    if rebin > 1:
+    if rebin > 1 :
         h5.Rebin(rebin)
         h5lisc.Rebin(rebin)
         h6.Rebin(rebin)
-    bw_mev = h5.GetXaxis().GetBinWidth(1) *
+    bw_mev = h5.GetXaxis().GetBinWidth(1) * 1000.0
 
     threshold = name.split("_")[0]
 
@@ -79,19 +80,19 @@ for name in plots_Edepo:
         print(f"Skipping '{name}': no positive-content bins")
         continue
     ymin = min(ymin_candidates)
-    ymax = max(h5.GetMaximum(), h5lisc.GetM
+    ymax = max(h5.GetMaximum(), h5lisc.GetMaximum(), h6.GetMaximum())
 
     title = (
         f"max energy deposition per SBT cell  -  "
-        f"digitised hits @ {threshold} MeV
+        f"digitised hits @ {threshold} MeV"
     )
     for h in (h5, h5lisc, h6):
         h.SetTitle(title)
-        h.GetXaxis().SetTitle("max(Energy d")
+        h.GetXaxis().SetTitle("max(Energy deposition) [GeV]")
         h.GetYaxis().SetTitle(f"weighted entries / {bw_mev:.3g} MeV")
-        h.GetYaxis().SetRangeUser(ymin * 0.
+        h.GetYaxis().SetRangeUser(ymin * 0.5, ymax * 5.0)
         if XMAX_GEV is not None:
-            h.GetXaxis().SetRangeUser(0.0,
+            h.GetXaxis().SetRangeUser(0.0, XMAX_GEV)
 
     h5.SetLineColor(ROOT.kAzure + 1)
     h5.SetMarkerColor(ROOT.kAzure + 1)
@@ -103,7 +104,7 @@ for name in plots_Edepo:
     h6.SetMarkerColor(ROOT.kRed + 1)
     h6.SetLineWidth(2)
 
-    canvas = ROOT.TCanvas(f"c_{name}", name
+    canvas = ROOT.TCanvas(f"c_{name}", name, 1200, 800)
     ROOT.gPad.SetLogy()
     ROOT.gPad.SetLeftMargin(0.12)
     ROOT.gPad.SetRightMargin(0.05)
@@ -115,9 +116,9 @@ for name in plots_Edepo:
     leg = ROOT.TLegend(0.5, 0.72, 0.95, 0.90)
     leg.SetBorderSize(0)
     leg.SetFillStyle(0)
-    leg.AddEntry(h5, f"TRY5 (PlSc):  Integries = {entries5:.0f}", "le")
+    leg.AddEntry(h5, f"TRY5 (PlSc):  Integral = {integral5:.3e}, Entries = {entries5:.0f}", "le")
     leg.AddEntry(h5lisc, f"TRY5 (LiSc):  Integral = {integral5lisc:.3e}, Entries = {entries5lisc:.0f}", "le")
-    leg.AddEntry(h6, f"TRY6 (LiSc):  Integries = {entries6:.0f}", "le")
+    leg.AddEntry(h6, f"TRY6 (LiSc):  Integral = {integral6:.3e}, Entries = {entries6:.0f}", "le")
     leg.Draw()
 
     outname = f"compare_{name}_{XMAX_GEV}.png"

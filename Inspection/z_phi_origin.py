@@ -15,7 +15,7 @@ parser.add_argument('--test', dest='test', action='store_true')
 parser.add_argument('--raw', dest='raw', action='store_true', default=False, help='If set, will fill digi hit histograms with 1 instead of weight and no Energyd deposition histograms will be filled')
 options = parser.parse_args()
 tag = options.tag if options.tag else "phi-z-plots"
-path = '/eos/user/j/jaweiss/MuonBack/TRY6LiSc/11921562/' if options.version == 'TRY6LiSc' else '/eos/user/j/jaweiss/MuonBack/TRY5PlSc/'
+path = '/eos/user/j/jaweiss/MuonBack/TRY6LiSc_88d2794/12996649' if options.version == 'TRY6LiSc' else '/eos/user/j/jaweiss/MuonBack/TRY5PlSc/'
 if options.version == "TRY5LiSc":
     path = "/eos/user/j/jaweiss/MuonBack/TRY5LiSc/12636148/"
 print(f"Using path: {path}")

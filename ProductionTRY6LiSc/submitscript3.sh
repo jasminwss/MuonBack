@@ -16,14 +16,25 @@ ClusterId=$5
 
 RUN_ID="${ClusterId}_${ProcId}"
 
-OUTPUT_BASE=/eos/user/j/jaweiss/MuonBack/TRY6LiSc_latest   # old TRY6LiSc (FairShip 0979da44a) stays in MuonBack/TRY6LiSc
+OUTPUT_BASE=/eos/user/j/jaweiss/MuonBack/TRY6LiSc_88d2794  # old TRY6LiSc (FairShip 0979da44a) stays in MuonBack/TRY6LiSc
 OUTPUT_DIR=${OUTPUT_BASE}/${ClusterId}/job_${ProcId}   # ← one folder per job
-mkdir -p "$OUTPUT_DIR"
+# mkdir -p can race on EOS when all jobs of a cluster create the shared
+# ClusterId parent dir at once ("File exists" despite -p), and EOS metadata
+# can lag a beat so the immediate -d check right after can still miss it;
+# retry a few times before giving up.
+for attempt in 1 2 3 4 5; do
+    mkdir -p "$OUTPUT_DIR" && break
+    [ -d "$OUTPUT_DIR" ] && break
+    sleep 2
+done
+[ -d "$OUTPUT_DIR" ] || { echo "ERROR: could not create $OUTPUT_DIR"; exit 1; }
 
 [ -f "$inputFile" ] || { echo "ERROR: input file missing: $inputFile"; exit 1; }
 
-FAIRSHIP=/eos/user/j/jaweiss/FairShip_latest   # same build as MuonDIS (commit 520342c48); old TRY6LiSc used /afs/.../FairShip @ 0979da44a
+
+FAIRSHIP=/eos/user/j/jaweiss/FairShip_88d2794  # newest built as of 6.10.2027; old TRY6LiSc used /afs/.../FairShip @ 0979da44a
 export QT_QPA_PLATFORM=offscreen   # headless node: Geant4's Qt UI otherwise aborts with qFatal
+export RATTLER_CACHE_DIR=/afs/cern.ch/work/j/jaweiss/.cache/rattler
 PIXI_BIN=/afs/cern.ch/work/j/jaweiss/.pixi/bin/pixi
 PIXI_RUN=("$PIXI_BIN" run --frozen --manifest-path "$FAIRSHIP/pixi.toml")
 echo "Using FAIRSHIP=$FAIRSHIP (pixi env)"

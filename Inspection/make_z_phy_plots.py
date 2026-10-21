@@ -7,7 +7,7 @@ ROOT.gStyle.SetOptStat(0)
 # Make plots comparing the histograms with regard to origin
 pathTRY5zphi = "/eos/user/j/jaweiss/MuonBack/TRY5PlSc/z_phi_origin/phi-z-plots.root"
 pathTRY5LiSczphi = "/eos/user/j/jaweiss/MuonBack/TRY5LiSc/z_ohi_origin/phi-z-plots.root"
-pathTRY6zphi = "/eos/user/j/jaweiss/MuonBack/TRY6LiSc/z_phi_origin/phi-z-plots.root"
+pathTRY6zphi = "/eos/user/j/jaweiss/MuonBack/TRY6LiSc_88d2794/z_phi_origin/TRY6LiSc_full_88d2794.root"
 
 
 outdirs = [os.path.dirname(pathTRY5zphi), os.path.dirname(pathTRY5LiSczphi),os.path.dirname(pathTRY6zphi)]
@@ -95,13 +95,14 @@ for origin in ["cavern", "SBT", "upstream"]:
 
 
 #make histogram without distinguishing origin
-pathTRY5 = "/afs/cern.ch/work/j/jaweiss/private/MuonBack/TRY5PlSc_full_onlySIM.root"
-pathTRY6 = "/afs/cern.ch/work/j/jaweiss/private/MuonBack/TRY6LiSc_full_onlySIM.root"
-pathTRY5LiSc = "/afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/TRY5LiSc.root"
+RESULTS = "/afs/cern.ch/work/j/jaweiss/private/MuonBack/results"
+pathTRY5 = f"{RESULTS}/TRY5PlSc/full/TRY5PlSc_full_onlySIM.root"
+pathTRY6 = f"{RESULTS}/TRY6LiSc_88d2794/full/TRY6LiSc_88d2794_full.root"
+pathTRY5LiSc = f"{RESULTS}/TRY5LiSc/full/TRY5LiSc.root"
 
 
 
-outdirs = [os.path.dirname(pathTRY5), os.path.dirname(pathTRY6), os.path.dirname(pathTRY5LiSc)]
+outdirs = [f"{RESULTS}/comparisons"]
 
 fTRY5 = ROOT.TFile.Open(pathTRY5)
 fTRY6 = ROOT.TFile.Open(pathTRY6)
