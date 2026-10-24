@@ -1,0 +1,510 @@
+# Steel-support version of inspect_Back.py (FairShip branch support-structure):
+# the "SBT" is the sensitive steel support, vetoPoint detIDs 10001-30904,
+# detID = type*10000 + k*100 + pos, type 1 frame, 2 longitudinal beam, 3 corner beam.
+# A "digi hit" is the energy deposited in one beam per event (steel has no
+# readout, so the thresholds are Edep cuts). Positions are the Eloss-weighted
+# mean of the beam's vetoPoints: vetoHit::GetXYZ only knows the LiSc cells.
+# to review: z=0 is at the Target?
+
+import ROOT, os
+from argparse import ArgumentParser
+from ShipGeoConfig import load_from_root_file
+import rootUtils as ut
+import numpy as np
+
+ROOT.gROOT.SetBatch(True)
+#ROOT.gErrorIgnoreLevel = ROOT.kFatal
+PDGData = ROOT.TDatabasePDG.Instance()
+
+parser = ArgumentParser()
+parser.add_argument('--path', dest='path', default='/eos/user/j/jaweiss/MuonBack/TRY6LiSc_SupStrSens/13045706')
+parser.add_argument('--tag', dest='tag', default='TRY6LiSc_SupStrSens')
+parser.add_argument('--raw', dest='raw', action='store_true', default=False, help='If set, will fill digi hit histograms with 1 instead of weight')
+parser.add_argument('--test', dest='test', action='store_true', default=False, help='If set, will only process the first some events for testing purposes')
+parser.add_argument('--outdir', dest='outdir', default='/afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/steel/', help='Folder for all outputs (histogram root, rate-vs-threshold root, readme)')
+options = parser.parse_args()
+raw = options.raw
+test = options.test
+
+print("using path:", options.path)
+
+
+# setup histograms 
+h = {}
+ut.bookHist(h, 'vetopoint_pdg'							,'Steel support (vetoPoint info)					; pdg  		; 	'				,20,-0.5,20.5)
+ut.bookHist(h, 'vetopoint_pdg_vs_energydeposition'		,'Steel support (vetoPoint info)					; pdg 		; Energy deposition (GeV) '		,20,-0.5,20.5,1000,0,1)
+ut.bookHist(h, 'vetopoint_min_energydeposition_muons'			,'Steel support (vetoPoint info) min(energy deposition) of muons 	; z(cm) ; #phi ;energy deposition(MeV)'	,100,3000.,8500.,36,0,360) #-3000.,3000.,36,0,360)
+ut.bookHist(h, 'vetopoint_energydeposition'				,'Steel support (vetoPoint info)					; Energy deposition per particle hit(GeV); 		'		,1000,0.,1)
+ut.bookHist(h, 'vetopoint_energydeposition_shapewise'	,'Steel support (vetoPoint info)					; Beam type; Energy deposition per particle hit(GeV)	;'	,3,0.5,3.5,1000,0,1)#2D plot
+ut.bookHist(h, 'vetopoint_topology_phi'					,'Steel support (vetoPoint info) hitrate ; z(cm) ; #phi 	'			,100,3000.,8500.,36,0,360)
+
+threshold_list=[0,5,10,20,30]
+for threshold in threshold_list:
+	
+	ut.bookHist(h, f'{threshold}_digihit_topology'				,f'Steel support (Digitised hits with min {threshold}MeV EDepo ) hitrate	; x(cm)	; z(cm)	; y(cm) 	',100,-500.,500.,100 ,3000.,8500.,100,-500.,500.) #,-3000.,3000.,100,-500.,500.)
+	ut.bookHist(h, f'{threshold}_digihit_topology_phi'			,f'Steel support (Digitised hits with min {threshold}MeV EDepo ) hitrate 	; z(cm) ; #phi ;			',100,3000.,8500.,36,0,360)#-3000.,3000.,36,0,360)
+	
+	ut.bookHist(h, f'{threshold}_vetopoint_multiplicity'		,f'Steel support (Digitised hits with min {threshold}MeV EDepo )	vetoPoint multiplicity		;Number of vetoPoints hitting the steel beam	; 	' , 100, 0, 100)
+	ut.bookHist(h, f'{threshold}_z_vs_vetopoint_multiplicity'	,f'Steel support (Digitised hits with min {threshold}MeV EDepo )			; z(cm)				;Number of vetoPoints hitting the steel beam 	',100,3000.,8500.,100,0,100)
+    #ut.bookHist(h, f'{threshold}_z_vs_vetopoint_multiplicity'	,f'Steel support (Digitised hits with min {threshold}MeV EDepo )			; z(cm)				;Number of vetoPoints hitting the steel beam 	',100,-30000.,30000.,100,0,100)
+
+	ut.bookHist(h, f'{threshold}_maxenergydeposition'			,f'Steel support (Digitised hits with min {threshold}MeV EDepo )			; max(Energy deposition) (GeV)'				,1000,0,1)
+	ut.bookHist(h, f'{threshold}_n_maxenergydeposition'			,f'Steel support (Digitised hits with min {threshold}MeV EDepo )			; Number of beams with max(Energy deposition) '	,100,0,100)
+	ut.bookHist(h, f'{threshold}_beam_maxenergydeposition'		,f'Steel support (Digitised hits with min {threshold}MeV EDepo )			; Max(E_deposition) in a beam (GeV) 	;Number of beams with max(E_deposition) '	,1000,0.,1,50,0,50)
+	
+	ut.bookHist(h, f'{threshold}_digihit_max_edepval_topology_phi'		,f'Steel support (Digitised hits with min {threshold}MeV EDepo ) min( max(energy deposition) per event ) 	; z(cm) ; #phi ;energy deposition(MeV)',100,3000.,8500.,36,0,360) #-3000.,3000.,36,0,360)
+	
+	h[f'{threshold}_digihit_max_edepval_topology_phi'].GetZaxis().SetTitleOffset(-0.5);  
+	h[f'{threshold}_digihit_max_edepval_topology_phi'].GetZaxis().SetTitleSize(0.03);   
+
+	ut.bookHist(h, f'{threshold}_digihit_energydeposition'			,f'Steel support (Digitised hits with min {threshold}MeV EDepo ) ; E_deposition per digihit (GeV) 				;										',1000,0.,1)
+	ut.bookHist(h, f'{threshold}_digihit_multiplicity'				,f'Steel support (Digitised hits with min {threshold}MeV EDepo ) ; Number of triggered steel beams in an event 	;										',2000,-0.5,2000.5)
+	ut.bookHist(h, f'{threshold}_digihit_rate_shapewise'			,f'Steel support (Digitised hits with min {threshold}MeV EDepo ) ; Beam type 										; Digitised hit rate					',3,0.5,3.5)
+	ut.bookHist(h, f'{threshold}_digihit_rate_beamwise'				,f'Steel support (Digitised hits with min {threshold}MeV EDepo ) ; Beam-wise digihit rate (detID)  						; 										',21000,10000,31000)
+	ut.bookHist(h, f'{threshold}_digihit_energydeposition_shapewise',f'Steel support (Digitised hits with min {threshold}MeV EDepo ) ; Beam type 										; Energy deposition per Digihit(GeV)	',3,0.5,3.5,1000,0,1)
+	ut.bookHist(h, f'{threshold}_digihit_z'							,f'Steel support (Digitised hits with min {threshold}MeV EDepo ) ; z(cm) 										; 										',100,3000.,8500)#-3000.,3000)
+
+# beam type = detID // 10000
+BEAM_TYPES = {1: 'frame', 2: 'longit. beam', 3: 'corner beam'}
+for key in ['vetopoint_energydeposition_shapewise'] + [f'{t}_digihit_rate_shapewise' for t in threshold_list] + [f'{t}_digihit_energydeposition_shapewise' for t in threshold_list]:
+	for beam_type, label in BEAM_TYPES.items():
+		h[key].GetXaxis().SetBinLabel(beam_type, label)
+
+def Phicalc(x, y):
+	"""Calculate the azimuthal angle phi in degrees with a 90° offset."""
+
+	r = ROOT.TMath.Sqrt(x*x + y*y)
+
+	if r == 0:
+		return np.inf #Prevent division by zero
+
+	if(y>=0):   phi =   ROOT.TMath.ACos(x/r)
+	else:       phi =-1*ROOT.TMath.ACos(x/r)+2*ROOT.TMath.Pi()
+
+	phi = phi*180/ ROOT.TMath.Pi()# Convert radians to degrees
+
+	phi = (phi + 90) % 360  #+90 offset to start reading from bottom center, phi range= [0,360)
+
+	return phi  
+
+def print_result(tag):
+	
+	global h,Event_weight,SBT_Event_weight,digihitrate_by_origin,sst_hitrate
+	ut.writeHists(h, directory +tag+'.root')
+
+	with open(directory +tag+'_readme.txt', 'w') as readme: 
+				
+		print("\n\n\n")
+		
+		
+		print(" {:46} Generated: {:10.5}\t Scaled to one spill: {:10.5}".format('Muon BG Statistics',float(len(Event_weight)),float(sum(Event_weight.values()))))
+		print(" {:46} Generated: {:10.5}\t Scaled to one spill: {:10.5}".format('Muon BG Statistics with SBT activity',float(len(SBT_Event_weight)),float(sum(SBT_Event_weight.values()))))
+		
+		print("\n\n  ================================================================================")
+		print("\n  Steel support (SBT = muon hits the steel)")
+		print("  --------------------------------------------------------------------------------\n\n")
+		
+
+		
+		readme.write("\n {:46} Generated: {:10.5}\t Scaled to one spill: {:10.5}".format('Muon BG Statistics',float(len(Event_weight)),float(sum(Event_weight.values()))))
+		readme.write("\n {:46} Generated: {:10.5}\t Scaled to one spill: {:10.5}".format('Muon BG Statistics with SBT activity',float(len(SBT_Event_weight)),float(sum(SBT_Event_weight.values()))))
+		
+		readme.write("\n\n  ================================================================================")
+		readme.write("\n  Steel support (SBT = muon hits the steel)")
+		readme.write("\n  --------------------------------------------------------------------------------\n\n")
+		
+		
+		header = "  {:10}\t {:>12}\t {:>12}\t {:>12}\t {:>12}\t {:>18}\t {:>18}".format(
+				'THRESHOLD', 'TOTAL (MHz)', 'cavern (MHz)', 'SBT (MHz)', 'upstream (MHz)',
+				'hottest beam (MHz)', '2nd beam (MHz)')
+		print(header)
+		print("  " + "-"*120)
+		readme.write("\n\n" + header + "\n  " + "-"*120)
+
+		# digi hit rate vs SBT threshold -> TGraphs written at the end of this function
+		g_total   = ROOT.TGraph();  g_total.SetName('digihitrate_vs_threshold_total')
+		g_hottest = ROOT.TGraph();  g_hottest.SetName('digihitrate_vs_threshold_hottest_beam')
+		g_second  = ROOT.TGraph();  g_second.SetName('digihitrate_vs_threshold_second_beam')
+		g_total.SetTitle('total digi hit rate;SBT threshold (MeV);rate (MHz)')
+		g_hottest.SetTitle('hottest beam digi hit rate;SBT threshold (MeV);rate (MHz)')
+		g_second.SetTitle('2nd hottest beam digi hit rate;SBT threshold (MeV);rate (MHz)')
+		# points only, no connecting line: these are measurements at a handful of
+		# discrete thresholds, not a curve. SetLineWidth(0) keeps the line off even
+		# if something draws with a line option later (e.g. TBrowser's default 'alp').
+		for g, mstyle, mcolor in ((g_total, 20, ROOT.kBlack), (g_hottest, 21, ROOT.kRed + 1), (g_second, 22, ROOT.kAzure + 1)):
+			g.SetMarkerStyle(mstyle)
+			g.SetMarkerSize(1.3)
+			g.SetMarkerColor(mcolor)
+			g.SetLineWidth(0)
+		hottest_beams = {}   # threshold -> ((detID, rate), (detID, rate)) for the block below
+
+		for threshold in threshold_list:
+			tkey = f'{threshold}MeV'
+			origin_totals = {o: sum(digihitrate_by_origin.get(tkey, {}).get(o, {}).values()) for o in ORIGIN_CATEGORIES}
+			total = sum(origin_totals.values())
+
+			# rate per beam, summed back over the origin split
+			beam_rate = {}
+			for o in ORIGIN_CATEGORIES:
+				for detID, r in digihitrate_by_origin.get(tkey, {}).get(o, {}).items():
+					beam_rate[detID] = beam_rate.get(detID, 0.0) + r
+			ranked = sorted(beam_rate.items(), key=lambda kv: kv[1], reverse=True)
+			hottest_id, hottest_rate = ranked[0] if len(ranked) > 0 else (-1, 0.0)
+			second_id,  second_rate  = ranked[1] if len(ranked) > 1 else (-1, 0.0)
+			hottest_beams[threshold] = ((hottest_id, hottest_rate), (second_id, second_rate))
+
+			g_total.SetPoint(  g_total.GetN(),   threshold, total        * 1e-6)
+			g_hottest.SetPoint(g_hottest.GetN(), threshold, hottest_rate * 1e-6)
+			g_second.SetPoint( g_second.GetN(),  threshold, second_rate  * 1e-6)
+
+			line = " {:5} MeV\t {:>12.4f}\t {:>12.4f}\t {:>12.4f}\t {:>12.4f}\t {:>18.4f}\t {:>18.4f}".format(
+				threshold,
+				total * 1e-6,
+				origin_totals['cavern']   * 1e-6,
+				origin_totals['SBT']      * 1e-6,
+				origin_totals['upstream'] * 1e-6,
+				hottest_rate * 1e-6,
+				second_rate  * 1e-6,
+			)
+			print(line)
+			readme.write("\n" + line)
+
+		print(       "\n  " + "-"*120 + "\n")
+		readme.write("\n  " + "-"*120 + "\n")
+
+		# which beam carries the hottest rate at each threshold. For TRY6 the hottest
+		# beam can be dominated by a single very-high-weight muon, so the 2nd beam could be
+		# the more representative number there.
+		beam_hdr = "  {:10}\t {:>16}\t {:>16}\t {:>16}\t {:>16}".format(
+				'THRESHOLD', 'hottest detID', 'hottest (MHz)', '2nd detID', '2nd (MHz)')
+		print("\n" + beam_hdr)
+		print("  " + "-"*90)
+		readme.write("\n\n" + beam_hdr + "\n  " + "-"*90)
+		for threshold in threshold_list:
+			(h_id, h_r), (s_id, s_r) = hottest_beams[threshold]
+			cline = "  {:5} MeV\t {:>16}\t {:>16.4f}\t {:>16}\t {:>16.4f}".format(
+				threshold, h_id, h_r * 1e-6, s_id, s_r * 1e-6)
+			print(cline)
+			readme.write("\n" + cline)
+		print(       "\n  " + "-"*90 + "\n")
+		readme.write("\n  " + "-"*90 + "\n")
+
+	# digi hit rate vs threshold, as graphs, next to the readme's histogram file.
+	# also stash a ready-drawn canvas (points, log-y, legend) so opening the file in
+	# a TBrowser shows the points right away, not a line squished flat by the linear
+	# default axis (the total spans ~2 orders of magnitude across thresholds).
+	fg = ROOT.TFile(directory + tag + '_rate_vs_threshold.root', 'RECREATE')
+	g_total.Write(); g_hottest.Write(); g_second.Write()
+
+	mg = ROOT.TMultiGraph()
+	mg.SetName('mg_digihitrate_vs_threshold')
+	mg.SetTitle('digi hit rate vs SBT threshold;SBT digi threshold (MeV);digi hit rate (MHz)')
+	mg.Add(g_total,   'P')
+	mg.Add(g_hottest, 'P')
+	mg.Add(g_second,  'P')
+
+	c_rate = ROOT.TCanvas('c_digihitrate_vs_threshold', 'digi hit rate vs threshold', 800, 600)
+	c_rate.SetLogy()
+	c_rate.SetGridx(); c_rate.SetGridy()
+	mg.Draw('AP')
+
+	leg = ROOT.TLegend(0.62, 0.72, 0.88, 0.88)
+	leg.SetBorderSize(0); leg.SetFillStyle(0)
+	leg.AddEntry(g_total,   'total',        'p')
+	leg.AddEntry(g_hottest, 'hottest beam', 'p')
+	leg.AddEntry(g_second,  '2nd beam',     'p')
+	leg.Draw()
+	c_rate.Write()
+
+	fg.Close()
+	print('rate-vs-threshold graphs (+ ready canvas) written to ' + directory + tag + '_rate_vs_threshold.root')
+
+ORIGIN_MAP = {'muon_cavern': 'cavern', 'muon_SBT': 'SBT', 'EM_debris_upstream': 'upstream'}
+
+def get_muon_tracks_hitting_SBT(event):
+    muon_tracks = set()
+    for hit in event.vetoPoint:
+        detID = hit.GetDetectorID()
+        if 1000 < detID < 999999 and abs(hit.PdgCode()) == 13:
+            muon_tracks.add(hit.GetTrackID())
+    return muon_tracks
+
+def is_event_with_muonhit_in_CAVERN(event):
+    """Any muon track in the event (not just those that hit the SBT) that
+    produces a daughter starting inside the Cavern volume."""
+    for track in event.MCTrack:
+        if track.GetMotherId() == -1: continue
+        if abs(event.MCTrack[track.GetMotherId()].GetPdgCode()) == 13:
+            X, Y, Z = track.GetStartX(), track.GetStartY(), track.GetStartZ()
+            node = ROOT.gGeoManager.FindNode(X, Y, Z)
+            if node and node.GetVolume().GetName().startswith('Cavern'):
+                return True
+    return False
+
+def classify_event_origin(event):
+    # Cavern check first and unrestricted, so muons that never leave an SBT
+    # hit but do interact in the Cavern aren't mis-bucketed as EM_debris_upstream.
+    if is_event_with_muonhit_in_CAVERN(event):
+        return 'muon_cavern'
+    if get_muon_tracks_hitting_SBT(event):
+        return 'muon_SBT'
+    return 'EM_debris_upstream'
+
+
+# global variables
+sGeo = None
+sbt_pdg_list={}
+sbt_pdg_index = 0
+Event_weight = {}
+global_event_id = -1 #s.t. it starts at 0
+muon_min_eloss_array = np.full((100, 36), np.inf)  # Initialize with infinity
+total_particlehitrate = 0
+SBT_Event_weight = {}
+min_maxEloss_array = {} 
+for threshold in threshold_list:
+	min_maxEloss_array[threshold]=np.full((100, 36), np.inf)  # Create a 2D array or dictionary to store minimum eLoss values per (z, phi) bin, initialized with inf
+ORIGIN_CATEGORIES = ('cavern', 'SBT', 'upstream')
+digihitrate_by_origin = {}   # [threshold][origin][detID] =  hitrate
+exception_issues = {}
+job_nmbr = 0
+
+for jobDir in sorted(os.listdir(options.path)):
+    if test and job_nmbr >= 50:  # Limit to first job for testing
+        break
+    job_nmbr += 1
+    jobPath = f'{options.path}/{jobDir}'
+    if not os.path.isdir(jobPath):
+        continue
+    job_files  = os.listdir(jobPath)
+    #reco_files = [f'{jobPath}/{fn}' for fn in job_files
+     #             if fn.startswith('reco_') and fn.endswith('.root')]
+    geo_files  = [f'{jobPath}/{fn}' for fn in job_files
+                  if fn.startswith('geo_')  and fn.endswith('.root')]
+    sim_files  = [f'{jobPath}/{fn}' for fn in job_files
+                    if fn.startswith('sim_')  and fn.endswith('.root')]
+    if not sim_files or not geo_files:
+        print(f"Skipping {jobDir}: missing sim or geo file")
+        continue
+
+    f_sim, fgeo = None, None
+    try:
+        # Geo einmal laden
+        if sGeo is None:
+            fgeo = ROOT.TFile.Open(geo_files[0])
+            ShipGeo = load_from_root_file(fgeo, "ShipGeo")
+            print('ShipGeo loaded')
+            sGeo = fgeo["FAIRGeom"]
+
+        # access
+        f_sim  = ROOT.TFile.Open(sim_files[0])
+        tree_sim  = f_sim.Get("cbmsim")
+        
+        for eventNr, event in enumerate(tree_sim): 
+
+            #setup empty dicts
+            ElossPerDetId       = {}
+            listOfVetoPoints    = {}
+            originElossPerDetId = {}  # [detID][origin] = total Eloss from that origin
+            posSumPerDetId      = {}  # [detID] = [sum Eloss*x, sum Eloss*y, sum Eloss*z] -> digi hit position
+
+            global_event_id += 1
+
+            # MCTrack lives in tree_sim, not event
+            for track in tree_sim.MCTrack:
+                if track.GetPdgCode() in [13, -13]:  # muon
+                    Event_weight[global_event_id] = track.GetWeight()
+                    break
+            if not raw:
+                weight = Event_weight[global_event_id]
+            else:
+                weight = 1.0  # If raw option is set, use weight=1 for all events
+
+            event_origin = ORIGIN_MAP[classify_event_origin(tree_sim)]
+
+            for key, veto_MCPoint in enumerate(tree_sim.vetoPoint): # for every particle hitting the steel
+
+                SBT_Event_weight[global_event_id] = Event_weight[global_event_id]  
+                total_particlehitrate  += Event_weight[global_event_id]  
+
+                pdgCode  = tree_sim.MCTrack[veto_MCPoint.GetTrackID()].GetPdgCode()
+                detID    = veto_MCPoint.GetDetectorID()
+                shape_nr = detID // 10000  # beam type: 1 frame, 2 longit. beam, 3 corner beam
+
+                vetopoint_z,vetopoint_x,vetopoint_y = veto_MCPoint.GetZ(),veto_MCPoint.GetX(),veto_MCPoint.GetY()
+                Eloss = veto_MCPoint.GetEnergyLoss()
+
+                if detID not in ElossPerDetId:
+                    ElossPerDetId[detID]=0
+                    listOfVetoPoints[detID]=[]
+                    originElossPerDetId[detID] = {o: 0.0 for o in ORIGIN_CATEGORIES}
+                    posSumPerDetId[detID] = [0.0, 0.0, 0.0]
+
+                ElossPerDetId[detID] += Eloss
+                listOfVetoPoints[detID].append(key)
+                originElossPerDetId[detID][event_origin] += Eloss
+                posSumPerDetId[detID][0] += Eloss * vetopoint_x
+                posSumPerDetId[detID][1] += Eloss * vetopoint_y
+                posSumPerDetId[detID][2] += Eloss * vetopoint_z
+
+                try:	particle_name=PDGData.GetParticle(pdgCode).GetName()
+                except:	particle_name='others'
+            
+                if particle_name not in sbt_pdg_list.values():
+                    sbt_pdg_list[sbt_pdg_index]=particle_name
+                    sbt_pdg_index+=1
+                    #print(f"New particle: {particle_name} (PDG code: {pdgCode})")
+
+                veto_pdg_key = [k for k, v in sbt_pdg_list.items() if v == particle_name][0]
+                #Particle: e-, PDG code: 11, assigned key: 1
+                #particle_name][0]e
+
+                h[ 'vetopoint_pdg'							].Fill(veto_pdg_key,weight)
+                h[ 'vetopoint_pdg_vs_energydeposition'		].Fill(veto_pdg_key,Eloss,weight)
+                h[ 'vetopoint_energydeposition'			 	].Fill(Eloss,weight)
+                h[ 'vetopoint_energydeposition_shapewise'	].Fill(shape_nr,Eloss,weight)
+                h[ 'vetopoint_topology_phi'				 	].Fill(vetopoint_z,Phicalc(vetopoint_x,vetopoint_y),weight) 
+
+                if particle_name.startswith('mu'):
+
+                    z_bin 	= h['vetopoint_min_energydeposition_muons'].GetXaxis().FindBin(vetopoint_z)
+                    phi_bin = h['vetopoint_min_energydeposition_muons'].GetYaxis().FindBin(Phicalc(vetopoint_x,vetopoint_y))
+
+                    # Skip underflow (0) and overflow (nBins+1)
+                    if 1 <= z_bin <= 100 and 1 <= phi_bin <= 36:
+                        if (Eloss/0.001) < muon_min_eloss_array[z_bin-1, phi_bin-1]:
+                            muon_min_eloss_array[z_bin-1, phi_bin-1] = Eloss/0.001
+                    #if z_bin == 0 or z_bin == 101:
+                        #print(f"Out of range z: {vetopoint_z:.1f}, shape_nr: {shape_nr}, detID: {detID}") OUT OF RANGE Z
+
+            #Explicit  Digitisation
+            digiSBT = {}
+            digihit_multiplicity = {threshold: 0 for threshold in threshold_list} #nSBT beams fired per event
+
+            for index,detID in enumerate(ElossPerDetId):
+                # digi hit = (detID, x, y, z, Eloss) of one beam; Eloss-weighted mean position of its
+                # vetoPoints, since vetoHit::GetXYZ only resolves LiSc cell IDs
+                eloss_sum = ElossPerDetId[detID]
+                hit_x, hit_y, hit_z = (s / eloss_sum for s in posSumPerDetId[detID]) if eloss_sum > 0 else (0.0, 0.0, 0.0)
+                aHit = (detID, hit_x, hit_y, hit_z, eloss_sum)
+                digiSBT[index] = aHit # storing all digi hits for the event
+
+                # dominant origin for this beam = whichever origin deposited the most Eloss
+                beam_origin = max(originElossPerDetId[detID], key=lambda o: originElossPerDetId[detID][o])
+
+                for threshold in threshold_list:
+                    if ElossPerDetId[detID]<0.001*threshold:
+                        continue
+
+                    if f'{threshold}MeV' not in digihitrate_by_origin:
+                        digihitrate_by_origin[f'{threshold}MeV'] = {o: {} for o in ORIGIN_CATEGORIES}
+
+                    if detID not in digihitrate_by_origin[f'{threshold}MeV'][beam_origin]:
+                        digihitrate_by_origin[f'{threshold}MeV'][beam_origin][detID] = 0
+
+                    digihit_multiplicity[threshold] += 1
+                    digihitrate_by_origin[f'{threshold}MeV'][beam_origin][detID] += Event_weight[global_event_id]
+                
+                    h[f'{threshold}_vetopoint_multiplicity'			].Fill(len(listOfVetoPoints[detID]),weight) 	#how many vetopoints per digitised hit	
+                    h[f'{threshold}_z_vs_vetopoint_multiplicity'	].Fill(hit_z,len(listOfVetoPoints[detID]),weight)
+
+            #Reading Digitised Data
+
+            maxeLoss = {threshold: -1 for threshold in threshold_list} #maximum energy deposition perbeam
+        
+            nmaxbeams={}
+            max_z={}
+            max_phi={}
+
+            for aHit in digiSBT.values():
+
+                detID, x, y, z, eLoss = aHit
+                shape_nr = detID // 10000  # beam type
+					
+                for threshold in threshold_list:
+            
+                    if eLoss<0.001*threshold: continue
+
+                    if eLoss>maxeLoss[threshold]:
+                        nmaxbeams[threshold]=0
+                        maxeLoss[threshold]= eLoss
+                        max_z[threshold]   = z
+                        max_phi[threshold] = Phicalc(x,y)
+						
+                    if eLoss==maxeLoss[threshold]:
+                        nmaxbeams[threshold]+=1
+                
+                    h[ f'{threshold}_digihit_topology'					].Fill(x,z,y,weight)
+                    h[ f'{threshold}_digihit_topology_phi'				].Fill(z,Phicalc(x,y),weight)
+                    h[ f'{threshold}_digihit_z'							].Fill(z,weight)
+                    h[ f'{threshold}_digihit_rate_shapewise'			].Fill(shape_nr,weight)
+                    h[ f'{threshold}_digihit_rate_beamwise'				].Fill(detID,weight)
+                    h[ f'{threshold}_digihit_energydeposition'			].Fill(eLoss,weight)
+                    h[ f'{threshold}_digihit_energydeposition_shapewise'].Fill(shape_nr,eLoss,weight)
+
+            for threshold in threshold_list:
+
+                h[f'{threshold}_digihit_multiplicity'].Fill(digihit_multiplicity[threshold],weight) #how many digihits per event
+            
+                if maxeLoss[threshold]==-1: continue
+        
+                h[f'{threshold}_beam_maxenergydeposition'	].Fill(maxeLoss[threshold],nmaxbeams[threshold],weight)#2Dplot
+                h[f'{threshold}_n_maxenergydeposition'		].Fill(nmaxbeams[threshold],weight)
+                h[f'{threshold}_maxenergydeposition'		].Fill(maxeLoss[threshold],weight)
+
+                z_bin 	= h[f'{threshold}_digihit_max_edepval_topology_phi'].GetXaxis().FindBin(max_z[threshold])
+                phi_bin = h[f'{threshold}_digihit_max_edepval_topology_phi'].GetYaxis().FindBin(max_phi[threshold])
+            
+                if maxeLoss[threshold]/0.001 < min_maxEloss_array[threshold][z_bin-1, phi_bin-1]:  # -1 to adjust for array index
+                    min_maxEloss_array[threshold][z_bin-1, phi_bin-1] = maxeLoss[threshold]/0.001
+
+        f_sim.Close()
+        if fgeo:
+            fgeo.Close()
+    except Exception as e:
+        if f_sim:
+            f_sim.Close()
+        if fgeo:
+            fgeo.Close()
+        exception_issues[jobDir] = e
+        continue
+
+
+# Set bin labels on the pdg histograms using your completed dictionary
+for idx, particle_name in sbt_pdg_list.items():
+    bin_number = idx + 1  # ROOT bins are 1-indexed!
+    h['vetopoint_pdg'].GetXaxis().SetBinLabel(bin_number, particle_name)
+    h['vetopoint_pdg_vs_energydeposition'].GetXaxis().SetBinLabel(bin_number, particle_name)
+
+# Fill the histogram with the minimum eLoss values
+for z_bin in range(1,101):
+    for phi_bin in range(1,37):
+        for threshold in threshold_list:
+            min_eloss = min_maxEloss_array[threshold][z_bin-1, phi_bin-1]
+            if min_eloss != np.inf:  # Only fill if there's a valid min eLoss
+                h[f'{threshold}_digihit_max_edepval_topology_phi'].SetBinContent(z_bin, phi_bin, min_eloss)
+            
+        min_eloss_veto = muon_min_eloss_array[z_bin-1, phi_bin-1]
+        if min_eloss_veto != np.inf:  # Only fill if there's a valid min eLoss
+            h['vetopoint_min_energydeposition_muons'].SetBinContent(z_bin, phi_bin, min_eloss_veto)	
+
+if raw:
+    for hist in h.values():
+        hist.SetName(hist.GetName() + '_raw')
+
+tag = options.tag if options.tag else "inspection"
+if raw:
+    tag = tag + "_raw"
+if test:
+    tag = tag + "_test"
+
+for key in h:
+    h[key].SetOption('HIST')
+
+# all outputs ({tag}.root, {tag}_rate_vs_threshold.root, {tag}_readme.txt) go to outdir;
+# the histogram file is written by print_result via ut.writeHists
+directory = os.path.join(options.outdir, '')
+os.makedirs(directory, exist_ok=True)
+print_result(tag)
+print(f"Histograms written to {directory}{tag}.root")
+print('Exceptions:\n', exception_issues)
+        

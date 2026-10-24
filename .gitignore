@@ -9,4 +9,5 @@ __pycache__/
 *.out
 *.log
 *.cc
-*.pngcore.[0-9]*
+*.png
+core.[0-9]*

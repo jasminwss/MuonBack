@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Plot the digi-hit-rate-vs-threshold TGraphs (total / hottest cell / 2nd cell)
-produced by inspect_Back.py as *_rate_vs_threshold.root.
+"""Plot the digi-hit-rate-vs-threshold TGraphs (total / hottest / 2nd hottest
+LiSc cell or steel beam) produced by inspect_Back.py or steel/inspect_Back_steel.py
+as *_rate_vs_threshold.root.
 
 Markers only, no connecting line - the thresholds are not evenly spaced and the
 points are measurements, not a curve. y-axis is log (the total spans ~2 orders
@@ -57,11 +58,17 @@ FILES = sys.argv[1:] or [
     "/afs/cern.ch/work/j/jaweiss/private/MuonBack/results/TRY6LiSc_88d2794/full/TRY6LiSc_88d2794_full_rate_vs_threshold.root",
 ]
 
-# graph name -> (legend label, colour, marker style)
+# series -> ({graph name: legend label}, colour, marker style); the first graph name found in a
+# file is used: *_cell from inspect_Back.py (LiSc), *_beam from inspect_Back_steel.py (steel)
 GRAPHS = {
-    "digihitrate_vs_threshold_total":        ("total",        ROOT.TColor.GetColor("#2a78d6"), 20),  # filled circle
-    "digihitrate_vs_threshold_hottest_cell": ("hottest cell", ROOT.TColor.GetColor("#eb6834"), 21),  # filled square
-    "digihitrate_vs_threshold_second_cell":  ("2nd cell",     ROOT.TColor.GetColor("#1baf7a"), 22),  # filled triangle
+    "total":   ({"digihitrate_vs_threshold_total": "total"},
+                ROOT.TColor.GetColor("#2a78d6"), 20),  # filled circle
+    "hottest": ({"digihitrate_vs_threshold_hottest_cell": "hottest cell",
+                 "digihitrate_vs_threshold_hottest_beam": "hottest beam"},
+                ROOT.TColor.GetColor("#eb6834"), 21),  # filled square
+    "second":  ({"digihitrate_vs_threshold_second_cell": "2nd cell",
+                 "digihitrate_vs_threshold_second_beam": "2nd beam"},
+                ROOT.TColor.GetColor("#1baf7a"), 22),  # filled triangle
 }
 
 open_files = []
@@ -75,17 +82,18 @@ for path in FILES:
         continue
     open_files.append(f)
 
-    graphs = {}
-    for name, (label, colour, marker) in GRAPHS.items():
-        g = f.Get(name)
-        if not g:
-            print(f"  {os.path.basename(path)}: '{name}' missing")
+    graphs = {}  # series -> (graph, legend label)
+    for series, (names, colour, marker) in GRAPHS.items():
+        name = next((nm for nm in names if f.Get(nm)), None)
+        if not name:
+            print(f"  {os.path.basename(path)}: '{series}' missing (tried {', '.join(names)})")
             continue
+        g = f.Get(name)
         g.SetMarkerStyle(marker)
         g.SetMarkerSize(1.5)
         g.SetMarkerColor(colour)
         g.SetLineColor(colour)          # legend swatch only, no line is drawn
-        graphs[name] = g
+        graphs[series] = (g, names[name])
         for y in g.GetY():
             if y > 0:
                 all_y.append(y)
@@ -147,10 +155,10 @@ for i, (path, graphs) in enumerate(pads_content):
 
     mg = ROOT.TMultiGraph()
     mg.SetTitle(f"{os.path.basename(path)};SBT digi threshold (MeV);digi hit rate (MHz)")
-    for name, (label, colour, marker) in GRAPHS.items():
-        g = graphs.get(name)
-        if not g:
+    for series in GRAPHS:
+        if series not in graphs:
             continue
+        g, label = graphs[series]
         mg.Add(g, "P")                  # "P" = points only for this graph
         leg.AddEntry(g, label, "p")
 
