@@ -15,4 +15,4 @@ echo "Using FAIRSHIP=$FAIRSHIP (pixi env)"
 
 #######################################################################################
 
-"${PIXI_RUN[@]}" python /afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/cavern_spectrometer.py --path /eos/user/j/jaweiss/MuonBack/TRY6LiSc_88d2794/12996649/ --tag TRY6LiSc_88d2794
+"${PIXI_RUN[@]}" python /afs/cern.ch/work/j/jaweiss/private/MuonBack/Inspection/cavern_spectrometer.py --path /eos/user/j/jaweiss/MuonBack/TRY6LiSc_88d2794/12996649/ --tag TRY6LiSc_88d2794 --raw

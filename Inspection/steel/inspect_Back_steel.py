@@ -2,8 +2,8 @@
 # the "SBT" is the sensitive steel support, vetoPoint detIDs 10001-30904,
 # detID = type*10000 + k*100 + pos, type 1 frame, 2 longitudinal beam, 3 corner beam.
 # A "digi hit" is the energy deposited in one beam per event (steel has no
-# readout, so the thresholds are Edep cuts). Positions are the Eloss-weighted
-# mean of the beam's vetoPoints: vetoHit::GetXYZ only knows the LiSc cells.
+# readout, so the thresholds are Edep cuts). Positions are the beam centres
+# from the geometry, like vetoHit::GetXYZ does for the LiSc cells.
 # to review: z=0 is at the Target?
 
 import ROOT, os
@@ -11,6 +11,7 @@ from argparse import ArgumentParser
 from ShipGeoConfig import load_from_root_file
 import rootUtils as ut
 import numpy as np
+from array import array
 
 ROOT.gROOT.SetBatch(True)
 #ROOT.gErrorIgnoreLevel = ROOT.kFatal
@@ -85,7 +86,22 @@ def Phicalc(x, y):
 
 	phi = (phi + 90) % 360  #+90 offset to start reading from bottom center, phi range= [0,360)
 
-	return phi  
+	return phi
+
+def steel_beam_centres():
+	"""detID -> (x, y, z) centre of every steel beam in global coordinates (same as vetoHit::GetXYZ for LiSc cells)"""
+	nav = ROOT.gGeoManager.GetCurrentNavigator()
+	centres = {}
+	base = 'cave_1/DecayVolume_1/T2_1'
+	for assembly in ('VetoSteelFrame', 'VetoSteelLongitBeam', 'VetoSteelCornerBeam'):
+		nav.cd(f'{base}/{assembly}_0')
+		for node in nav.GetCurrentNode().GetVolume().GetNodes():
+			nav.cd(f'{base}/{assembly}_0/{node.GetName()}')
+			origin = node.GetVolume().GetShape().GetOrigin()
+			master = array('d', [0, 0, 0])
+			nav.LocalToMaster(array('d', [origin[0], origin[1], origin[2]]), master)
+			centres[node.GetNumber()] = tuple(master)  # copy number = detID
+	return centres
 
 def print_result(tag):
 	
@@ -294,6 +310,8 @@ for jobDir in sorted(os.listdir(options.path)):
             ShipGeo = load_from_root_file(fgeo, "ShipGeo")
             print('ShipGeo loaded')
             sGeo = fgeo["FAIRGeom"]
+            beam_centre = steel_beam_centres()
+            print(f'{len(beam_centre)} steel beam centres loaded')
 
         # access
         f_sim  = ROOT.TFile.Open(sim_files[0])
@@ -305,7 +323,6 @@ for jobDir in sorted(os.listdir(options.path)):
             ElossPerDetId       = {}
             listOfVetoPoints    = {}
             originElossPerDetId = {}  # [detID][origin] = total Eloss from that origin
-            posSumPerDetId      = {}  # [detID] = [sum Eloss*x, sum Eloss*y, sum Eloss*z] -> digi hit position
 
             global_event_id += 1
 
@@ -337,14 +354,10 @@ for jobDir in sorted(os.listdir(options.path)):
                     ElossPerDetId[detID]=0
                     listOfVetoPoints[detID]=[]
                     originElossPerDetId[detID] = {o: 0.0 for o in ORIGIN_CATEGORIES}
-                    posSumPerDetId[detID] = [0.0, 0.0, 0.0]
 
                 ElossPerDetId[detID] += Eloss
                 listOfVetoPoints[detID].append(key)
                 originElossPerDetId[detID][event_origin] += Eloss
-                posSumPerDetId[detID][0] += Eloss * vetopoint_x
-                posSumPerDetId[detID][1] += Eloss * vetopoint_y
-                posSumPerDetId[detID][2] += Eloss * vetopoint_z
 
                 try:	particle_name=PDGData.GetParticle(pdgCode).GetName()
                 except:	particle_name='others'
@@ -381,11 +394,9 @@ for jobDir in sorted(os.listdir(options.path)):
             digihit_multiplicity = {threshold: 0 for threshold in threshold_list} #nSBT beams fired per event
 
             for index,detID in enumerate(ElossPerDetId):
-                # digi hit = (detID, x, y, z, Eloss) of one beam; Eloss-weighted mean position of its
-                # vetoPoints, since vetoHit::GetXYZ only resolves LiSc cell IDs
-                eloss_sum = ElossPerDetId[detID]
-                hit_x, hit_y, hit_z = (s / eloss_sum for s in posSumPerDetId[detID]) if eloss_sum > 0 else (0.0, 0.0, 0.0)
-                aHit = (detID, hit_x, hit_y, hit_z, eloss_sum)
+                # digi hit = (detID, x, y, z, Eloss) of one beam, positioned at the beam centre
+                hit_x, hit_y, hit_z = beam_centre[detID]
+                aHit = (detID, hit_x, hit_y, hit_z, ElossPerDetId[detID])
                 digiSBT[index] = aHit # storing all digi hits for the event
 
                 # dominant origin for this beam = whichever origin deposited the most Eloss
