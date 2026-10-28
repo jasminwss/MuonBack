@@ -14,13 +14,17 @@
 #   reco  - a converged FitTrack has fitTrack2MC == cavern muon
 # The categories are nested: all > truth > digi > reco.
 # SBT digitisation is the same as in inspect_Back.py (sum Eloss per cell, threshold cut).
+# Wall heatmaps: where the cavern muon interacts in the concrete = start vertex of its most
+# energetic daughter inside the Cavern volume, one entry per cavern muon, z-y (wall face) and x-y (beam view).
+# p_station1 / station1_xy: momentum and x-y of the cavern muon at its most upstream strawtubesPoint in station 1 (truth/digi/reco only).
 #
 # usage:
 #   python cavern_spectrometer.py --path /eos/user/j/jaweiss/MuonBack/TRY6LiSc_88d2794/12996649/ --tag TRY6LiSc_88d2794
 #   python cavern_spectrometer.py --tag TRY6LiSc_88d2794 --plot-only   (redraw from the existing ROOT file)
 
-import ROOT, os
+import ROOT, os, math
 from argparse import ArgumentParser
+from array import array
 
 ROOT.gROOT.SetBatch(True)
 ROOT.gStyle.SetOptStat(0)
@@ -41,6 +45,7 @@ cat_label = {
     'digi':  '#mu has straw digi hits',
     'reco':  '#mu reconstructed (converged fit)',
 }
+p_categories = categories[1:]  # 'all' would be identical to 'truth' for the station-1 momentum
 cat_style = {  # (colour, line style)
     'all':   ('#071b3c', 1),
     'truth': ('#c64384', 2),
@@ -48,6 +53,13 @@ cat_style = {  # (colour, line style)
     'reco':  ('#f1debc', 1),
 }
 EDEP_REBIN = 10  # Edep is booked with 1 MeV bins, plotted in 10 MeV bins
+# inner ECN3 hall in cm (passive/ShipCave.cxx: experiment_cavern box at ECN3_shift, z_transition = 20.52 m)
+HALL_X = (-456., 1143.)
+HALL_Y = (-336., 864.)
+HALL_Z = (2134., 12052.)
+# straw aperture in cm (geometry/strawtubes_config.yaml: SST width/height = half lengths)
+ST_X = (-200., 200.)
+ST_Y = (-300., 300.)
 
 tag = options.tag
 if options.raw:  tag += '_raw'
@@ -70,24 +82,35 @@ def book():
                 f'{c}_{t}_digihit_energydeposition',
                 f'{cat_label[c]} @ {t} MeV;E_deposition per digihit (GeV);Digihits per spill',
                 1000, 0., 1.)
+        h[f'{c}_wall_zy'] = ROOT.TH2D(f'{c}_wall_zy', f'{cat_label[c]};z (cm);y (cm);Muons per spill',
+                                      202, 2000., 12100., 65, -400., 900.)
+        h[f'{c}_wall_xy'] = ROOT.TH2D(f'{c}_wall_xy', f'{cat_label[c]};x (cm);y (cm);Muons per spill',
+                                      200, -700., 1300., 150, -500., 1000.)
+    for c in p_categories:
+        h[f'{c}_p_station1'] = ROOT.TH1D(f'{c}_p_station1', f'{cat_label[c]};p at straw station 1 (GeV);Muons per spill',
+                                         80, 0., 400.)
+        h[f'{c}_station1_xy'] = ROOT.TH2D(f'{c}_station1_xy', f'{cat_label[c]};x (cm);y (cm);Muons per spill',
+                                          70, -350., 350., 80, -400., 400.)
     for hist in h.values():
         hist.Sumw2()
         hist.SetDirectory(0)
     return h
 
-def get_cavern_muon_ids(event):
-    """TrackIDs of all muons with a daughter starting inside the Cavern volume.
+def get_cavern_muons(event):
+    """{TrackID: (x, y, z)} for all muons with a daughter starting inside the Cavern volume,
+    (x, y, z) = start vertex of the most energetic such daughter (interaction point in the wall).
     Same condition as is_event_with_muonhit_in_CAVERN in inspect_Back.py, but
     collects every such muon instead of returning at the first."""
-    ids = set()
+    vtx = {}  # TrackID -> (E, x, y, z)
     for track in event.MCTrack:
         motherId = track.GetMotherId()
-        if motherId == -1 or motherId in ids: continue
+        if motherId == -1: continue
         if abs(event.MCTrack[motherId].GetPdgCode()) == 13:
             node = ROOT.gGeoManager.FindNode(track.GetStartX(), track.GetStartY(), track.GetStartZ())
             if node and node.GetVolume().GetName().startswith('Cavern'):
-                ids.add(motherId)
-    return ids
+                if motherId not in vtx or track.GetEnergy() > vtx[motherId][0]:
+                    vtx[motherId] = (track.GetEnergy(), track.GetStartX(), track.GetStartY(), track.GetStartZ())
+    return {k: v[1:] for k, v in vtx.items()}
 
 def spectrometer_flags(tree, tree_sim, eventNr, muon_ids):
     """truth / digi / reco flags for the cavern muons. tree = reco, tree_sim = sim (already at eventNr).
@@ -159,12 +182,23 @@ def fill(h):
                 if options.raw:
                     weight = 1.0
 
-                muon_ids = get_cavern_muon_ids(event_sim)
-                if not muon_ids:
+                cavern_vtx = get_cavern_muons(event_sim)
+                if not cavern_vtx:
                     continue
+                muon_ids = set(cavern_vtx)
                 n_cavern += 1
 
                 flags = spectrometer_flags(tree, event_sim, eventNr, muon_ids)
+
+                # cavern muon TrackID -> (z, p, x, y) of its most upstream strawtubesPoint in station 1 (detID = station * 1e6 + ...)
+                st1 = {}
+                if flags['truth']:
+                    for point in event_sim.strawtubesPoint:
+                        tid = point.GetTrackID()
+                        if tid not in muon_ids or point.GetDetectorID() // 1000000 != 1: continue
+                        if tid not in st1 or point.GetZ() < st1[tid][0]:
+                            st1[tid] = (point.GetZ(), math.sqrt(point.GetPx()**2 + point.GetPy()**2 + point.GetPz()**2),
+                                        point.GetX(), point.GetY())
 
                 # sum Eloss per cell, as in inspect_Back.py
                 ElossPerDetId = {}
@@ -177,6 +211,13 @@ def fill(h):
                         continue
                     h['n_events'].Fill(categories.index(c), weight)
                     h['n_events_raw'].Fill(categories.index(c))
+                    for x, y, z in cavern_vtx.values():
+                        h[f'{c}_wall_zy'].Fill(z, y, weight)
+                        h[f'{c}_wall_xy'].Fill(x, y, weight)
+                    if c in p_categories:
+                        for _, p, x, y in st1.values():
+                            h[f'{c}_p_station1'].Fill(p, weight)
+                            h[f'{c}_station1_xy'].Fill(x, y, weight)
                     for t in threshold_list:
                         mult = 0
                         for eloss in ElossPerDetId.values():
@@ -254,11 +295,60 @@ def draw_overlay(h, quantity, xtitle, ytitle, xmax, rebin, name):
     keep += list(hists.values())
     c.SaveAs(os.path.join(outdir, f'{tag}_cavern_spectrometer_{quantity}.png'))
 
+def draw_heatmap(h, quantity, cats, outline, nx, ny):
+    """2D heatmap {cat}_{quantity}, one panel per category in an nx x ny grid; outline = (x1, y1, x2, y2) drawn as a dashed box"""
+    # single-hue sequential palette (light -> dark magenta), so low and high rates are not read as different categories
+    cols = ['#fbeef4', '#c64384', '#3d0a24']
+    rgb = [[int(col[i:i + 2], 16) / 255. for col in cols] for i in (1, 3, 5)]
+    ROOT.TColor.CreateGradientColorTable(len(cols), array('d', [0., 0.5, 1.]), *[array('d', v) for v in rgb], 255)
+
+    c = ROOT.TCanvas(f'c_{quantity}', quantity, 2800, 1500)
+    c.Divide(nx, ny)
+    keep = []
+    for i, cat in enumerate(cats, start=1):
+        pad = c.cd(i)
+        pad.SetLogz(); pad.SetLeftMargin(0.05 * nx); pad.SetRightMargin(0.08 * nx); pad.SetBottomMargin(0.12)  # narrower pads -> larger margins
+        hc = h[f'{cat}_{quantity}']
+        hc.SetTitle(f'{options.tag}: {cat_label[cat]}')
+        for axis in (hc.GetXaxis(), hc.GetYaxis(), hc.GetZaxis()):
+            axis.SetLabelSize(0.045); axis.SetTitleSize(0.05)
+        hc.GetYaxis().SetTitleOffset(0.95); hc.GetZaxis().SetTitleOffset(1.1)
+        hc.Draw('COLZ')
+        box = ROOT.TBox(*outline)
+        box.SetFillStyle(0); box.SetLineColor(ROOT.kGray + 2); box.SetLineStyle(2); box.SetLineWidth(2)
+        box.Draw()
+        keep.append(box)
+    c.SaveAs(os.path.join(outdir, f'{tag}_cavern_spectrometer_{quantity}.png'))
+
+def draw_p_station1(h):
+    hists = [h[f'{cat}_p_station1'] for cat in p_categories]
+    ymax = max(hc.GetMaximum() for hc in hists)
+    ymin = min((hc.GetMinimum(0) for hc in hists if hc.GetMinimum(0) > 0), default=1e-3)
+    c = ROOT.TCanvas('c_p_station1', 'p station 1', 1800, 1200)
+    c.SetLogy(); c.SetLeftMargin(0.12); c.SetRightMargin(0.04)
+    leg = ROOT.TLegend(0.5, 0.74, 0.94, 0.88)
+    leg.SetBorderSize(0); leg.SetFillStyle(0); leg.SetTextSize(0.035)
+    for j, (cat, hc) in enumerate(zip(p_categories, hists)):
+        col, ls = cat_style[cat]
+        hc.SetLineColor(ROOT.TColor.GetColor(col)); hc.SetLineStyle(ls); hc.SetLineWidth(4)
+        hc.SetTitle(f'{options.tag}: cavern #mu at straw station 1')
+        hc.SetMaximum(5 * ymax); hc.SetMinimum(0.5 * ymin)
+        hc.Draw('HIST' if j == 0 else 'HIST SAME')
+        leg.AddEntry(hc, cat_label[cat], 'l')
+    leg.Draw()
+    c.SaveAs(os.path.join(outdir, f'{tag}_cavern_spectrometer_p_station1.png'))
+
 def plot(h):
     draw_overlay(h, 'digihit_multiplicity', 'Triggered SBT cells per event', 'Events per spill',
                  100, 1, 'SBT digihit multiplicity')
     draw_overlay(h, 'digihit_energydeposition', 'E_deposition per digihit (GeV)', 'Digihits per spill',
                  1., EDEP_REBIN, 'SBT E_deposition per cell')
+    if 'all_wall_zy' in h:  # older ROOT files have no wall histograms
+        draw_heatmap(h, 'wall_zy', categories, (HALL_Z[0], HALL_Y[0], HALL_Z[1], HALL_Y[1]), 2, 2)
+        draw_heatmap(h, 'wall_xy', categories, (HALL_X[0], HALL_Y[0], HALL_X[1], HALL_Y[1]), 2, 2)
+    if 'truth_p_station1' in h:
+        draw_p_station1(h)
+        draw_heatmap(h, 'station1_xy', p_categories, (ST_X[0], ST_Y[0], ST_X[1], ST_Y[1]), 3, 1)
 
 if options.plot_only:
     f_in = ROOT.TFile.Open(rootname)
